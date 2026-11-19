@@ -1,0 +1,1397 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>InsightAI — AI-Augmented Analytics Platform</title>
+  
+  <!-- Human-Crafted Typography: Plus Jakarta Sans & JetBrains Mono -->
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;500;600&family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+  
+  <script src="https://www.gstatic.com/antigravity/web/dev/tailwindcss.min.js"></script>
+
+  <style>
+    /* Human-Crafted Studio Color System */
+    :root {
+      --bg-base: #0B0F17;
+      --bg-surface: #111827;
+      --bg-card: #151D2C;
+      --bg-card-hover: #192336;
+      --border-subtle: rgba(255, 255, 255, 0.08);
+      --border-active: rgba(99, 102, 241, 0.35);
+      
+      --text-primary: #F1F5F9;
+      --text-secondary: #94A3B8;
+      --text-muted: #64748B;
+      
+      --accent-primary: #6366F1;
+      --accent-hover: #4F46E5;
+      --accent-glow: rgba(99, 102, 241, 0.18);
+      
+      --color-emerald: #10B981;
+      --color-amber: #F59E0B;
+      --color-rose: #F43F5E;
+      --color-sky: #38BDF8;
+      --color-violet: #8B5CF6;
+      
+      --shadow-card: 0 4px 20px -2px rgba(0, 0, 0, 0.35), 0 1px 3px 0 rgba(0, 0, 0, 0.2);
+    }
+
+    body.light {
+      --bg-base: #F8FAFC;
+      --bg-surface: #FFFFFF;
+      --bg-card: #FFFFFF;
+      --bg-card-hover: #F8FAFC;
+      --border-subtle: rgba(0, 0, 0, 0.08);
+      --border-active: rgba(99, 102, 241, 0.4);
+      
+      --text-primary: #0F172A;
+      --text-secondary: #475569;
+      --text-muted: #94A3B8;
+      
+      --shadow-card: 0 4px 20px -4px rgba(15, 23, 42, 0.06), 0 1px 3px 0 rgba(15, 23, 42, 0.04);
+    }
+
+    body {
+      background-color: var(--bg-base);
+      color: var(--text-primary);
+      font-family: 'Plus Jakarta Sans', -apple-system, BlinkMacSystemFont, sans-serif;
+      background-image: 
+        radial-gradient(circle at 50% 0%, rgba(99, 102, 241, 0.07) 0%, transparent 50%),
+        radial-gradient(circle at 90% 20%, rgba(56, 189, 248, 0.04) 0%, transparent 40%);
+      background-attachment: fixed;
+    }
+
+    .font-mono {
+      font-family: 'JetBrains Mono', monospace;
+    }
+
+    .custom-card {
+      background-color: var(--bg-card);
+      border: 1px solid var(--border-subtle);
+      box-shadow: var(--shadow-card);
+      transition: all 0.25s cubic-bezier(0.16, 1, 0.3, 1);
+    }
+
+    .custom-card:hover {
+      border-color: var(--border-active);
+    }
+
+    .tab-pill {
+      transition: all 0.2s ease;
+      color: var(--text-secondary);
+    }
+
+    .tab-pill.active {
+      background: linear-gradient(135deg, #6366F1, #4F46E5);
+      color: #FFFFFF;
+      box-shadow: 0 2px 10px rgba(99, 102, 241, 0.3);
+    }
+
+    .chart-bar {
+      transition: all 0.3s cubic-bezier(0.16, 1, 0.3, 1);
+    }
+    .chart-bar:hover {
+      filter: brightness(1.15);
+      cursor: pointer;
+    }
+
+    /* Custom subtle scrollbar */
+    ::-webkit-scrollbar { width: 6px; height: 6px; }
+    ::-webkit-scrollbar-track { background: transparent; }
+    ::-webkit-scrollbar-thumb { background: rgba(255, 255, 255, 0.12); border-radius: 9999px; }
+    ::-webkit-scrollbar-thumb:hover { background: rgba(255, 255, 255, 0.2); }
+  </style>
+</head>
+<body class="min-h-screen antialiased flex flex-col selection:bg-indigo-500 selection:text-white">
+
+  <!-- SSE TOAST CONTAINER -->
+  <div id="toastContainer" class="fixed bottom-6 right-6 z-50 flex flex-col gap-2.5 pointer-events-none"></div>
+
+  <!-- TOP NAVIGATION BAR -->
+  <header class="border-b border-[var(--border-subtle)] bg-[var(--bg-surface)]/80 backdrop-blur-md px-6 py-3.5 flex items-center justify-between sticky top-0 z-40">
+    <div class="flex items-center gap-3.5">
+      <div class="w-9 h-9 rounded-xl bg-gradient-to-tr from-indigo-600 via-indigo-500 to-sky-400 flex items-center justify-center font-extrabold text-white shadow-lg shadow-indigo-500/25 tracking-tight text-sm">
+        AI
+      </div>
+      <div>
+        <div class="flex items-center gap-2">
+          <span class="font-bold text-sm tracking-tight text-[var(--text-primary)]">InsightAI</span>
+          <span class="text-[11px] font-semibold bg-indigo-500/10 text-indigo-400 border border-indigo-500/20 px-2 py-0.5 rounded-full">v1.2 Studio</span>
+        </div>
+        <p class="text-[11px] text-[var(--text-muted)] font-medium">Multi-Tenant Analytics</p>
+      </div>
+    </div>
+
+    <!-- Tenant & Role selector -->
+    <div class="flex items-center gap-2.5">
+      <div class="flex items-center gap-2 bg-[var(--bg-card)] border border-[var(--border-subtle)] px-3 py-1.5 rounded-lg text-xs">
+        <span class="text-[var(--text-muted)] font-medium">Org:</span>
+        <select id="tenantSelect" onchange="switchTenant(this.value)" class="bg-transparent font-semibold cursor-pointer focus:outline-none text-[var(--text-primary)]">
+          <option value="acme" class="bg-slate-900 text-slate-100">Acme Retail (Pro Plan)</option>
+          <option value="globex" class="bg-slate-900 text-slate-100">Globex SaaS (Free Plan)</option>
+        </select>
+      </div>
+
+      <div class="flex items-center gap-2 bg-[var(--bg-card)] border border-[var(--border-subtle)] px-3 py-1.5 rounded-lg text-xs">
+        <span class="text-[var(--text-muted)] font-medium">Role:</span>
+        <select id="roleSelect" onchange="switchRole(this.value)" class="bg-transparent font-semibold cursor-pointer focus:outline-none text-[var(--text-primary)]">
+          <option value="owner" class="bg-slate-900 text-slate-100">Owner</option>
+          <option value="admin" class="bg-slate-900 text-slate-100">Admin</option>
+          <option value="viewer" class="bg-slate-900 text-slate-100">Viewer</option>
+        </select>
+      </div>
+
+      <button onclick="toggleTheme()" class="p-2 rounded-lg border border-[var(--border-subtle)] hover:bg-[var(--bg-card)] text-xs text-[var(--text-secondary)] transition">
+        🌓
+      </button>
+    </div>
+  </header>
+
+  <!-- SUB-HEADER / TAB NAVIGATION -->
+  <div class="border-b border-[var(--border-subtle)] bg-[var(--bg-surface)]/60 backdrop-blur-md px-6 py-2.5 flex items-center justify-between">
+    <nav class="flex space-x-1.5 bg-[var(--bg-base)]/60 p-1 rounded-xl border border-[var(--border-subtle)]">
+      <button onclick="switchTab('dashboard')" id="tab-dashboard" class="tab-pill active px-3.5 py-1.5 rounded-lg text-xs font-semibold flex items-center gap-1.5">
+        📊 Overview
+      </button>
+      <button onclick="switchTab('ai')" id="tab-ai" class="tab-pill px-3.5 py-1.5 rounded-lg text-xs font-semibold flex items-center gap-1.5 hover:text-[var(--text-primary)]">
+        💬 Ask AI
+      </button>
+      <button onclick="switchTab('datasets')" id="tab-datasets" class="tab-pill px-3.5 py-1.5 rounded-lg text-xs font-semibold flex items-center gap-1.5 hover:text-[var(--text-primary)]">
+        📁 Ingestion & Anomalies
+      </button>
+      <button onclick="switchTab('billing')" id="tab-billing" class="tab-pill px-3.5 py-1.5 rounded-lg text-xs font-semibold flex items-center gap-1.5 hover:text-[var(--text-primary)]">
+        💳 Billing & Gates
+      </button>
+      <button onclick="switchTab('architecture')" id="tab-architecture" class="tab-pill px-3.5 py-1.5 rounded-lg text-xs font-semibold flex items-center gap-1.5 hover:text-[var(--text-primary)]">
+        🏛️ System Defense
+      </button>
+    </nav>
+
+    <!-- Real-time SSE indicator -->
+    <div class="flex items-center gap-2 text-xs font-medium text-[var(--text-muted)]">
+      <span class="w-2 h-2 rounded-full bg-emerald-400 animate-pulse shadow-sm shadow-emerald-400/50"></span>
+      <span>SSE Stream Active</span>
+      <span id="tenantBadge" class="ml-2 font-mono text-[11px] px-2 py-0.5 rounded-md bg-indigo-950/40 text-indigo-300 border border-indigo-800/40">schema: org_1</span>
+    </div>
+  </div>
+
+  <!-- MAIN CONTENT CONTAINER -->
+  <main class="flex-1 p-6 md:p-8 max-w-7xl w-full mx-auto space-y-6">
+
+    <!-- ==================== 1. DASHBOARD & 6 CORE CHARTS ==================== -->
+    <section id="view-dashboard" class="space-y-6">
+      <div class="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
+        <div>
+          <h1 class="text-2xl font-extrabold tracking-tight text-[var(--text-primary)]" id="dashTitle">Acme Retail Executive Overview</h1>
+          <p class="text-xs text-[var(--text-muted)] mt-1">Multi-tenant dataset <code class="bg-[var(--bg-surface)] px-1.5 py-0.5 rounded text-indigo-400 font-mono">org_1.acme_sales</code> — 6 core analytical charts</p>
+        </div>
+        <div class="flex items-center gap-2.5">
+          <button onclick="simulatePdfExport()" class="px-3.5 py-2 border border-[var(--border-subtle)] bg-[var(--bg-card)] hover:bg-[var(--bg-card-hover)] rounded-xl text-xs font-semibold flex items-center gap-1.5 transition text-[var(--text-secondary)] shadow-sm">
+            <span>📄</span> Export PDF
+          </button>
+          <button id="addWidgetBtn" onclick="openWidgetModal()" class="px-4 py-2 bg-gradient-to-r from-indigo-600 to-indigo-500 hover:from-indigo-500 hover:to-indigo-600 text-white rounded-xl text-xs font-semibold flex items-center gap-1.5 shadow-md shadow-indigo-500/20 transition">
+            <span>➕</span> Add Widget
+          </button>
+        </div>
+      </div>
+
+      <!-- 6-CHART GRID -->
+      <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-5" id="widgetsContainer">
+        
+        <!-- 1. Line Chart: Monthly Revenue Trend -->
+        <div class="custom-card rounded-2xl p-5 flex flex-col justify-between">
+          <div class="flex items-center justify-between mb-2">
+            <div>
+              <h3 class="font-bold text-sm text-[var(--text-primary)]">Monthly Revenue Trend</h3>
+              <p class="text-[11px] text-[var(--text-muted)]">Time-Series Line Chart</p>
+            </div>
+            <span class="text-[11px] bg-emerald-500/10 text-emerald-400 border border-emerald-500/20 px-2.5 py-0.5 rounded-full font-semibold font-mono">+18.4%</span>
+          </div>
+          <div class="h-44 w-full flex items-center justify-center">
+            <svg viewBox="0 0 320 140" class="w-full h-full overflow-visible">
+              <defs>
+                <linearGradient id="lineGrad" x1="0" y1="0" x2="0" y2="1">
+                  <stop offset="0%" stop-color="#6366F1" stop-opacity="0.25"/>
+                  <stop offset="100%" stop-color="#6366F1" stop-opacity="0.0"/>
+                </linearGradient>
+                <filter id="glowLine" x="-20%" y="-20%" width="140%" height="140%">
+                  <feDropShadow dx="0" dy="4" stdDeviation="4" flood-color="#6366F1" flood-opacity="0.3"/>
+                </filter>
+              </defs>
+              <!-- Grid lines -->
+              <line x1="25" y1="25" x2="300" y2="25" stroke="currentColor" stroke-opacity="0.08" stroke-dasharray="3 3"/>
+              <line x1="25" y1="65" x2="300" y2="65" stroke="currentColor" stroke-opacity="0.08" stroke-dasharray="3 3"/>
+              <line x1="25" y1="105" x2="300" y2="105" stroke="currentColor" stroke-opacity="0.08" stroke-dasharray="3 3"/>
+              <!-- Area fill -->
+              <polygon points="35,110 35,85 85,72 135,90 185,50 235,42 285,25 285,110" fill="url(#lineGrad)"/>
+              <!-- Main Line -->
+              <polyline points="35,85 85,72 135,90 185,50 235,42 285,25" fill="none" stroke="#6366F1" stroke-width="3" stroke-linecap="round" stroke-linejoin="round" filter="url(#glowLine)"/>
+              <!-- Nodes -->
+              <circle cx="35" cy="85" r="4.5" fill="#151D2C" stroke="#6366F1" stroke-width="2.5"/>
+              <circle cx="85" cy="72" r="4.5" fill="#151D2C" stroke="#6366F1" stroke-width="2.5"/>
+              <circle cx="135" cy="90" r="4.5" fill="#151D2C" stroke="#6366F1" stroke-width="2.5"/>
+              <circle cx="185" cy="50" r="4.5" fill="#151D2C" stroke="#6366F1" stroke-width="2.5"/>
+              <circle cx="235" cy="42" r="4.5" fill="#151D2C" stroke="#6366F1" stroke-width="2.5"/>
+              <circle cx="285" cy="25" r="5" fill="#818CF8" stroke="#FFFFFF" stroke-width="2"/>
+              <!-- X Labels -->
+              <text x="35" y="128" font-size="10" fill="var(--text-muted)" text-anchor="middle" font-weight="500">Jan</text>
+              <text x="85" y="128" font-size="10" fill="var(--text-muted)" text-anchor="middle" font-weight="500">Feb</text>
+              <text x="135" y="128" font-size="10" fill="var(--text-muted)" text-anchor="middle" font-weight="500">Mar</text>
+              <text x="185" y="128" font-size="10" fill="var(--text-muted)" text-anchor="middle" font-weight="500">Apr</text>
+              <text x="235" y="128" font-size="10" fill="var(--text-muted)" text-anchor="middle" font-weight="500">May</text>
+              <text x="285" y="128" font-size="10" fill="var(--text-muted)" text-anchor="middle" font-weight="500">Jun</text>
+            </svg>
+          </div>
+          <div class="mt-3 pt-3 border-t border-[var(--border-subtle)] text-[11px] text-[var(--text-muted)] flex justify-between items-center">
+            <span>Agg: <code>date_trunc('month', sale_date)</code></span>
+            <span class="text-indigo-400 font-mono font-bold">$184,200 YTD</span>
+          </div>
+        </div>
+
+        <!-- 2. Bar Chart: Product Categories -->
+        <div class="custom-card rounded-2xl p-5 flex flex-col justify-between">
+          <div class="flex items-center justify-between mb-2">
+            <div>
+              <h3 class="font-bold text-sm text-[var(--text-primary)]">Revenue by Category</h3>
+              <p class="text-[11px] text-[var(--text-muted)]">Categorical Bar Chart</p>
+            </div>
+            <span class="text-[11px] bg-slate-800 text-slate-300 border border-slate-700 px-2 py-0.5 rounded-full font-mono font-medium">4 Series</span>
+          </div>
+          <div class="h-44 w-full flex items-center justify-center">
+            <svg viewBox="0 0 320 140" class="w-full h-full">
+              <defs>
+                <linearGradient id="barGrad1" x1="0" y1="0" x2="0" y2="1"><stop offset="0%" stop-color="#38BDF8"/><stop offset="100%" stop-color="#0284C7"/></linearGradient>
+                <linearGradient id="barGrad2" x1="0" y1="0" x2="0" y2="1"><stop offset="0%" stop-color="#34D399"/><stop offset="100%" stop-color="#059669"/></linearGradient>
+                <linearGradient id="barGrad3" x1="0" y1="0" x2="0" y2="1"><stop offset="0%" stop-color="#FBBF24"/><stop offset="100%" stop-color="#D97706"/></linearGradient>
+                <linearGradient id="barGrad4" x1="0" y1="0" x2="0" y2="1"><stop offset="0%" stop-color="#A78BFA"/><stop offset="100%" stop-color="#7C3AED"/></linearGradient>
+              </defs>
+              <line x1="20" y1="110" x2="300" y2="110" stroke="currentColor" stroke-opacity="0.08"/>
+              <!-- Bars -->
+              <rect x="35" y="32" width="46" height="78" rx="6" fill="url(#barGrad1)" class="chart-bar"/>
+              <rect x="105" y="48" width="46" height="62" rx="6" fill="url(#barGrad2)" class="chart-bar"/>
+              <rect x="175" y="66" width="46" height="44" rx="6" fill="url(#barGrad3)" class="chart-bar"/>
+              <rect x="245" y="80" width="46" height="30" rx="6" fill="url(#barGrad4)" class="chart-bar"/>
+              <!-- Value tags -->
+              <text x="58" y="24" font-size="10" font-weight="700" fill="#38BDF8" text-anchor="middle">$82k</text>
+              <text x="128" y="40" font-size="10" font-weight="700" fill="#34D399" text-anchor="middle">$64k</text>
+              <text x="198" y="58" font-size="10" font-weight="700" fill="#FBBF24" text-anchor="middle">$45k</text>
+              <text x="268" y="72" font-size="10" font-weight="700" fill="#A78BFA" text-anchor="middle">$28k</text>
+              <!-- X labels -->
+              <text x="58" y="126" font-size="10" fill="var(--text-muted)" text-anchor="middle" font-weight="500">Electr.</text>
+              <text x="128" y="126" font-size="10" fill="var(--text-muted)" text-anchor="middle" font-weight="500">Apparel</text>
+              <text x="198" y="126" font-size="10" fill="var(--text-muted)" text-anchor="middle" font-weight="500">Home</text>
+              <text x="268" y="126" font-size="10" fill="var(--text-muted)" text-anchor="middle" font-weight="500">Sports</text>
+            </svg>
+          </div>
+          <div class="mt-3 pt-3 border-t border-[var(--border-subtle)] text-[11px] text-[var(--text-muted)] flex justify-between items-center">
+            <span>Grouping: <code>category</code></span>
+            <span class="text-sky-400 font-mono font-semibold">Top: Electronics</span>
+          </div>
+        </div>
+
+        <!-- 3. Pie/Donut Chart: Channel Distribution -->
+        <div class="custom-card rounded-2xl p-5 flex flex-col justify-between">
+          <div class="flex items-center justify-between mb-2">
+            <div>
+              <h3 class="font-bold text-sm text-[var(--text-primary)]">Acquisition Channels</h3>
+              <p class="text-[11px] text-[var(--text-muted)]">Donut Share Chart</p>
+            </div>
+            <span class="text-[11px] bg-indigo-500/10 text-indigo-400 border border-indigo-500/20 px-2 py-0.5 rounded-full font-mono">100% Share</span>
+          </div>
+          <div class="h-44 w-full flex items-center justify-center">
+            <svg viewBox="0 0 220 140" class="w-full h-full">
+              <!-- Donut Segments -->
+              <circle cx="70" cy="70" r="44" fill="none" stroke="#6366F1" stroke-width="20" stroke-dasharray="138 276" stroke-dashoffset="0"/>
+              <circle cx="70" cy="70" r="44" fill="none" stroke="#10B981" stroke-width="20" stroke-dasharray="74 276" stroke-dashoffset="-138"/>
+              <circle cx="70" cy="70" r="44" fill="none" stroke="#F59E0B" stroke-width="20" stroke-dasharray="42 276" stroke-dashoffset="-212"/>
+              <circle cx="70" cy="70" r="44" fill="none" stroke="#FB7185" stroke-width="20" stroke-dasharray="22 276" stroke-dashoffset="-254"/>
+              
+              <!-- Center Metric -->
+              <text x="70" y="67" font-size="12" font-weight="700" fill="var(--text-primary)" text-anchor="middle">3,420</text>
+              <text x="70" y="79" font-size="8" fill="var(--text-muted)" text-anchor="middle">Visits</text>
+
+              <!-- Legend -->
+              <circle cx="145" cy="38" r="4.5" fill="#6366F1"/>
+              <text x="156" y="41" font-size="10" fill="var(--text-secondary)">Organic 50%</text>
+              <circle cx="145" cy="58" r="4.5" fill="#10B981"/>
+              <text x="156" y="61" font-size="10" fill="var(--text-secondary)">Paid 27%</text>
+              <circle cx="145" cy="78" r="4.5" fill="#F59E0B"/>
+              <text x="156" y="81" font-size="10" fill="var(--text-secondary)">Referral 15%</text>
+              <circle cx="145" cy="98" r="4.5" fill="#FB7185"/>
+              <text x="156" y="101" font-size="10" fill="var(--text-secondary)">Direct 8%</text>
+            </svg>
+          </div>
+          <div class="mt-3 pt-3 border-t border-[var(--border-subtle)] text-[11px] text-[var(--text-muted)] flex justify-between items-center">
+            <span>Dominant: Organic</span>
+            <span class="text-emerald-400 font-mono font-medium">50% Organic</span>
+          </div>
+        </div>
+
+        <!-- 4. Scatter Plot: Price vs Discount Sensitivity -->
+        <div class="custom-card rounded-2xl p-5 flex flex-col justify-between">
+          <div class="flex items-center justify-between mb-2">
+            <div>
+              <h3 class="font-bold text-sm text-[var(--text-primary)]">Price vs. Order Volume</h3>
+              <p class="text-[11px] text-[var(--text-muted)]">Correlation Scatter Plot</p>
+            </div>
+            <span class="text-[11px] bg-amber-500/10 text-amber-400 border border-amber-500/20 px-2 py-0.5 rounded-full font-mono">r = -0.62</span>
+          </div>
+          <div class="h-44 w-full flex items-center justify-center">
+            <svg viewBox="0 0 320 140" class="w-full h-full">
+              <line x1="30" y1="110" x2="300" y2="110" stroke="currentColor" stroke-opacity="0.08"/>
+              <line x1="30" y1="20" x2="30" y2="110" stroke="currentColor" stroke-opacity="0.08"/>
+              
+              <!-- Subtle trendline -->
+              <line x1="45" y1="35" x2="280" y2="105" stroke="#F59E0B" stroke-width="1.5" stroke-dasharray="4 4" stroke-opacity="0.4"/>
+              
+              <!-- Data points -->
+              <circle cx="50" cy="35" r="4" fill="#FBBF24" opacity="0.85"/>
+              <circle cx="70" cy="45" r="4" fill="#FBBF24" opacity="0.85"/>
+              <circle cx="95" cy="50" r="4" fill="#FBBF24" opacity="0.85"/>
+              <circle cx="120" cy="65" r="4" fill="#FBBF24" opacity="0.85"/>
+              <circle cx="150" cy="60" r="4" fill="#FBBF24" opacity="0.85"/>
+              <circle cx="180" cy="80" r="4" fill="#FBBF24" opacity="0.85"/>
+              <circle cx="210" cy="75" r="4" fill="#FBBF24" opacity="0.85"/>
+              <circle cx="240" cy="95" r="4" fill="#FBBF24" opacity="0.85"/>
+              
+              <!-- Anomaly node highlighted with human-designed callout -->
+              <circle cx="260" cy="30" r="7" fill="#F43F5E" opacity="0.95"/>
+              <circle cx="260" cy="30" r="11" fill="none" stroke="#F43F5E" stroke-width="1.5" stroke-opacity="0.5" stroke-dasharray="2 2"/>
+              <text x="260" y="16" font-size="8.5" fill="#FB7185" text-anchor="middle" font-weight="700">Outlier (11.4σ)</text>
+            </svg>
+          </div>
+          <div class="mt-3 pt-3 border-t border-[var(--border-subtle)] text-[11px] text-[var(--text-muted)] flex justify-between items-center">
+            <span>Regression: Negative slope</span>
+            <span class="text-rose-400 font-mono font-semibold">1 Anomaly Tagged</span>
+          </div>
+        </div>
+
+        <!-- 5. Heatmap: Activity Matrix -->
+        <div class="custom-card rounded-2xl p-5 flex flex-col justify-between">
+          <div class="flex items-center justify-between mb-2">
+            <div>
+              <h3 class="font-bold text-sm text-[var(--text-primary)]">User Engagement Heatmap</h3>
+              <p class="text-[11px] text-[var(--text-muted)]">2D Matrix Density</p>
+            </div>
+            <span class="text-[11px] bg-violet-500/10 text-violet-400 border border-violet-500/20 px-2 py-0.5 rounded-full font-mono">Hourly Matrix</span>
+          </div>
+          <div class="h-44 w-full flex items-center justify-center">
+            <div class="grid grid-cols-5 gap-1.5 w-full max-w-[270px]">
+              <div class="text-[10px] text-[var(--text-muted)] text-center font-mono">Mon</div>
+              <div class="text-[10px] text-[var(--text-muted)] text-center font-mono">Tue</div>
+              <div class="text-[10px] text-[var(--text-muted)] text-center font-mono">Wed</div>
+              <div class="text-[10px] text-[var(--text-muted)] text-center font-mono">Thu</div>
+              <div class="text-[10px] text-[var(--text-muted)] text-center font-mono">Fri</div>
+              
+              <!-- Mon-Fri Shift cells -->
+              <div class="h-7 rounded-md bg-indigo-950/70 flex items-center justify-center text-[10px] font-mono text-indigo-300">12</div>
+              <div class="h-7 rounded-md bg-indigo-900/80 flex items-center justify-center text-[10px] font-mono text-indigo-300">28</div>
+              <div class="h-7 rounded-md bg-indigo-700/80 flex items-center justify-center text-[10px] font-mono text-white">54</div>
+              <div class="h-7 rounded-md bg-indigo-600/90 flex items-center justify-center text-[10px] font-mono text-white">71</div>
+              <div class="h-7 rounded-md bg-indigo-500 flex items-center justify-center text-[10px] font-mono text-white font-bold">89</div>
+              
+              <div class="h-7 rounded-md bg-indigo-800/80 flex items-center justify-center text-[10px] font-mono text-white">45</div>
+              <div class="h-7 rounded-md bg-indigo-600/90 flex items-center justify-center text-[10px] font-mono text-white">78</div>
+              <div class="h-7 rounded-md bg-indigo-500 flex items-center justify-center text-[10px] font-mono text-white font-bold">96</div>
+              <div class="h-7 rounded-md bg-sky-400 flex items-center justify-center text-[10px] font-mono text-slate-950 font-extrabold">112</div>
+              <div class="h-7 rounded-md bg-sky-300 flex items-center justify-center text-[10px] font-mono text-slate-950 font-extrabold shadow-sm">128</div>
+              
+              <div class="h-7 rounded-md bg-indigo-950/70 flex items-center justify-center text-[10px] font-mono text-indigo-300">18</div>
+              <div class="h-7 rounded-md bg-indigo-900/80 flex items-center justify-center text-[10px] font-mono text-indigo-300">31</div>
+              <div class="h-7 rounded-md bg-indigo-800/80 flex items-center justify-center text-[10px] font-mono text-white">49</div>
+              <div class="h-7 rounded-md bg-indigo-700/80 flex items-center justify-center text-[10px] font-mono text-white">62</div>
+              <div class="h-7 rounded-md bg-indigo-600 flex items-center justify-center text-[10px] font-mono text-white font-bold">82</div>
+            </div>
+          </div>
+          <div class="mt-3 pt-3 border-t border-[var(--border-subtle)] text-[11px] text-[var(--text-muted)] flex justify-between items-center">
+            <span>Peak: Fri 2:00 PM</span>
+            <span class="text-sky-300 font-mono font-medium">128 Events/hr</span>
+          </div>
+        </div>
+
+        <!-- 6. Funnel Chart: Marketing Conversion -->
+        <div class="custom-card rounded-2xl p-5 flex flex-col justify-between">
+          <div class="flex items-center justify-between mb-2">
+            <div>
+              <h3 class="font-bold text-sm text-[var(--text-primary)]">Conversion Funnel</h3>
+              <p class="text-[11px] text-[var(--text-muted)]">Stage Drop-off Analysis</p>
+            </div>
+            <span class="text-[11px] bg-emerald-500/10 text-emerald-400 border border-emerald-500/20 px-2 py-0.5 rounded-full font-mono">3.4% Total</span>
+          </div>
+          <div class="h-44 w-full flex flex-col justify-center gap-2.5 px-2">
+            <div>
+              <div class="flex justify-between text-[11px] mb-1 font-medium">
+                <span class="text-[var(--text-secondary)]">1. Visits</span>
+                <span class="text-[var(--text-primary)] font-mono">100,000 (100%)</span>
+              </div>
+              <div class="w-full bg-slate-800/60 h-3 rounded-full overflow-hidden p-0.5 border border-white/5">
+                <div class="bg-gradient-to-r from-indigo-500 to-indigo-600 h-full rounded-full w-full"></div>
+              </div>
+            </div>
+            <div>
+              <div class="flex justify-between text-[11px] mb-1 font-medium">
+                <span class="text-[var(--text-secondary)]">2. Product Views</span>
+                <span class="text-[var(--text-primary)] font-mono">42,000 (42%)</span>
+              </div>
+              <div class="w-full bg-slate-800/60 h-3 rounded-full overflow-hidden p-0.5 border border-white/5">
+                <div class="bg-gradient-to-r from-indigo-500 to-sky-500 h-full rounded-full w-[42%]"></div>
+              </div>
+            </div>
+            <div>
+              <div class="flex justify-between text-[11px] mb-1 font-medium">
+                <span class="text-[var(--text-secondary)]">3. Add to Cart</span>
+                <span class="text-[var(--text-primary)] font-mono">14,500 (14.5%)</span>
+              </div>
+              <div class="w-full bg-slate-800/60 h-3 rounded-full overflow-hidden p-0.5 border border-white/5">
+                <div class="bg-gradient-to-r from-amber-500 to-amber-400 h-full rounded-full w-[14.5%]"></div>
+              </div>
+            </div>
+            <div>
+              <div class="flex justify-between text-[11px] mb-1 font-medium">
+                <span class="text-[var(--text-secondary)]">4. Checkout Completed</span>
+                <span class="text-[var(--text-primary)] font-mono">3,420 (3.4%)</span>
+              </div>
+              <div class="w-full bg-slate-800/60 h-3 rounded-full overflow-hidden p-0.5 border border-white/5">
+                <div class="bg-gradient-to-r from-emerald-500 to-emerald-400 h-full rounded-full w-[8%]"></div>
+              </div>
+            </div>
+          </div>
+          <div class="mt-3 pt-3 border-t border-[var(--border-subtle)] text-[11px] text-[var(--text-muted)] flex justify-between items-center">
+            <span>Stage: 4 Steps</span>
+            <span class="text-emerald-400 font-mono font-medium">3,420 Conversions</span>
+          </div>
+        </div>
+
+      </div>
+    </section>
+
+    <!-- ==================== 2. ASK AI (TEXT-TO-SQL) ==================== -->
+    <section id="view-ai" class="hidden space-y-5">
+      <div class="flex items-center justify-between">
+        <div>
+          <h2 class="text-2xl font-extrabold tracking-tight text-[var(--text-primary)]">AI Query Engine (Text-to-SQL)</h2>
+          <p class="text-xs text-[var(--text-muted)] mt-0.5">Translate natural language into safe, tenant-isolated PostgreSQL queries</p>
+        </div>
+        <div class="flex items-center gap-2">
+          <span class="text-xs bg-slate-800/80 border border-slate-700/80 px-2.5 py-1 rounded-lg text-slate-300 font-mono">
+            Model: gpt-4o-mini
+          </span>
+          <span class="text-xs bg-emerald-500/10 text-emerald-400 border border-emerald-500/20 px-2.5 py-1 rounded-lg font-mono font-semibold" id="aiQuotaBadge">
+            Daily Quota: 18 / 500 Used (Pro)
+          </span>
+        </div>
+      </div>
+
+      <div class="flex flex-wrap gap-2 text-xs">
+        <span class="text-[var(--text-muted)] py-1 font-medium">Quick suggestions:</span>
+        <button onclick="setQuery('Show total revenue by region')" class="px-3 py-1 rounded-full bg-[var(--bg-card)] hover:bg-indigo-600 hover:text-white border border-[var(--border-subtle)] transition shadow-sm">
+          "Show total revenue by region"
+        </button>
+        <button onclick="setQuery('Now filter that to only Electronics in Q1')" class="px-3 py-1 rounded-full bg-[var(--bg-card)] hover:bg-indigo-600 hover:text-white border border-[var(--border-subtle)] transition shadow-sm">
+          "Now filter that to only Electronics in Q1" (Memory test)
+        </button>
+        <button onclick="setQuery('DROP TABLE acme_sales; SELECT * FROM users;')" class="px-3 py-1 rounded-full bg-rose-950/40 text-rose-300 hover:bg-rose-900 border border-rose-800/60 transition shadow-sm">
+          ⚠️ "DROP TABLE acme_sales;" (SQL Injection Attack Test)
+        </button>
+      </div>
+
+      <div class="custom-card rounded-2xl p-5 flex flex-col h-[530px]">
+        <div class="flex-1 overflow-y-auto space-y-4 pr-2" id="chatMessages">
+          <div class="flex gap-3.5 items-start">
+            <div class="w-8 h-8 rounded-xl bg-gradient-to-tr from-indigo-600 to-sky-400 text-white flex items-center justify-center font-bold text-xs shrink-0 shadow-md shadow-indigo-500/20">
+              AI
+            </div>
+            <div class="bg-[var(--bg-surface)] border border-[var(--border-subtle)] p-4 rounded-2xl max-w-2xl text-xs space-y-2 shadow-sm">
+              <p class="font-semibold text-[var(--text-primary)]">Hello! I'm your InsightAI Data Analyst.</p>
+              <p class="text-[var(--text-secondary)] leading-relaxed">
+                I have inspected the active schema for <code class="text-indigo-400 font-mono font-semibold" id="chatSchemaList">org_1.acme_sales, org_1.acme_marketing</code>.
+                You can ask questions in plain English, and I will generate safe SQL, execute it against your isolated PostgreSQL database, and render an interactive chart.
+              </p>
+            </div>
+          </div>
+        </div>
+
+        <div class="pt-3.5 border-t border-[var(--border-subtle)] mt-3">
+          <form onsubmit="handleChatSubmit(event)" class="flex gap-2.5">
+            <input type="text" id="aiInput" placeholder="Ask a question about your data (e.g. 'Compare weekly revenue across channels')..."
+              class="flex-1 bg-[var(--bg-surface)] border border-[var(--border-subtle)] focus:border-indigo-500 rounded-xl px-4 py-2.5 text-xs focus:outline-none focus:ring-2 focus:ring-indigo-500/20 text-[var(--text-primary)] transition">
+            <button type="submit" class="bg-gradient-to-r from-indigo-600 to-indigo-500 hover:from-indigo-500 hover:to-indigo-600 text-white px-5 py-2.5 rounded-xl text-xs font-semibold flex items-center gap-1.5 shadow-md shadow-indigo-500/20 transition">
+              <span>Send</span> ⚡
+            </button>
+          </form>
+          <div class="flex items-center justify-between text-[11px] text-[var(--text-muted)] mt-2.5 px-1 font-medium">
+            <span>🛡️ Protected by <b>sqlglot AST Validator</b> + Read-Only Postgres Role</span>
+            <span>Conversational Context: 10 Turns Memory</span>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- ==================== 3. DATA INGESTION & ANOMALIES ==================== -->
+    <section id="view-datasets" class="hidden space-y-6">
+      <div class="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
+        <div>
+          <h2 class="text-2xl font-extrabold tracking-tight text-[var(--text-primary)]">Data Ingestion & Outliers</h2>
+          <p class="text-xs text-[var(--text-muted)] mt-0.5">Ingest tabular datasets into dedicated schemas with real-time anomaly scans</p>
+        </div>
+        <button onclick="openIngestModal()" class="px-4 py-2.5 bg-gradient-to-r from-indigo-600 to-indigo-500 hover:from-indigo-500 hover:to-indigo-600 text-white rounded-xl text-xs font-semibold flex items-center gap-2 shadow-md shadow-indigo-500/20 transition">
+          <span>📤</span> Ingest CSV / Connect API
+        </button>
+      </div>
+
+      <!-- Active Datasets Table -->
+      <div class="custom-card rounded-2xl overflow-hidden">
+        <div class="px-5 py-3.5 border-b border-[var(--border-subtle)] bg-[var(--bg-surface)]/70 flex items-center justify-between">
+          <span class="text-xs font-bold uppercase tracking-wider text-[var(--text-muted)]">Active Tables in <span id="currentSchemaName" class="text-indigo-400 font-mono">org_1</span></span>
+          <span class="text-xs font-mono text-indigo-400 font-semibold" id="totalRowsCount">Total Rows: 3,420</span>
+        </div>
+        <div class="divide-y divide-[var(--border-subtle)] text-xs" id="datasetsList">
+          <!-- Populated by JS -->
+        </div>
+      </div>
+
+      <!-- Outlier Inspector Card -->
+      <div id="anomalyBox" class="custom-card border-rose-500/30 rounded-2xl p-5 space-y-3">
+        <div class="flex items-center justify-between">
+          <div class="flex items-center gap-2.5">
+            <span class="w-8 h-8 rounded-lg bg-rose-500/10 text-rose-400 border border-rose-500/20 flex items-center justify-center text-sm font-bold">⚠️</span>
+            <div>
+              <h3 class="font-bold text-sm text-rose-400">Statistical Outliers Flagged by Scanner (|Z| > 3.0 & IQR 3x)</h3>
+              <p class="text-[11px] text-[var(--text-muted)]">app/services/anomaly.py</p>
+            </div>
+          </div>
+          <span class="text-xs text-rose-400 bg-rose-500/10 px-2 py-0.5 rounded-full font-mono font-medium">Automatic Alert</span>
+        </div>
+        <p class="text-xs text-[var(--text-secondary)]" id="anomalyDescription">
+          The background worker scanned numeric columns in table <code class="text-rose-400 font-mono">org_1.acme_sales</code> and found records exceeding 3 standard deviations:
+        </p>
+        <div class="bg-[var(--bg-surface)] rounded-xl p-3.5 font-mono text-xs overflow-x-auto border border-[var(--border-subtle)]">
+          <table class="w-full text-left" id="anomaliesTable">
+            <thead>
+              <tr class="text-[var(--text-muted)] border-b border-[var(--border-subtle)]">
+                <th class="pb-2">Row ID</th>
+                <th class="pb-2">Dataset</th>
+                <th class="pb-2">Column</th>
+                <th class="pb-2">Outlier Value</th>
+                <th class="pb-2">Dataset Mean</th>
+                <th class="pb-2">Z-Score</th>
+                <th class="pb-2">Detection Rule</th>
+              </tr>
+            </thead>
+            <tbody id="anomaliesTbody">
+              <tr class="text-rose-300">
+                <td class="pt-2">#842</td>
+                <td class="pt-2">acme_sales</td>
+                <td class="pt-2">revenue</td>
+                <td class="pt-2 font-bold text-rose-400">$14,500.00</td>
+                <td class="pt-2">$128.40</td>
+                <td class="pt-2 font-bold text-rose-400">+11.4σ</td>
+                <td class="pt-2 text-[var(--text-muted)]">Extreme Spike (|Z| > 3.0)</td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+      </div>
+    </section>
+
+    <!-- ==================== 4. BILLING & FEATURE GATES ==================== -->
+    <section id="view-billing" class="hidden space-y-6">
+      <div class="flex items-center justify-between">
+        <div>
+          <h2 class="text-2xl font-extrabold tracking-tight text-[var(--text-primary)]">Stripe Billing & Tier Enforcement</h2>
+          <p class="text-xs text-[var(--text-muted)] mt-0.5">Subscription management with live HTTP 402 feature gates</p>
+        </div>
+        <div class="text-xs text-[var(--text-muted)] font-mono">
+          Listener: <code class="bg-[var(--bg-surface)] px-1.5 py-0.5 rounded text-indigo-400">/api/v1/billing/webhook</code>
+        </div>
+      </div>
+
+      <div class="grid grid-cols-1 md:grid-cols-3 gap-6">
+        <!-- FREE TIER -->
+        <div class="custom-card rounded-2xl p-6 flex flex-col justify-between" id="card-free">
+          <div class="space-y-4">
+            <div class="flex justify-between items-center">
+              <h3 class="font-bold text-base text-[var(--text-primary)]">Free Plan</h3>
+              <span id="badge-free" class="hidden text-xs bg-emerald-500/20 text-emerald-400 px-2 py-0.5 rounded font-semibold">ACTIVE</span>
+            </div>
+            <div class="text-3xl font-extrabold text-[var(--text-primary)]">$0 <span class="text-xs font-normal text-[var(--text-muted)]">/ mo</span></div>
+            <ul class="text-xs space-y-2.5 text-[var(--text-secondary)]">
+              <li class="flex items-center gap-2"><span>✔️</span> Max 2 Datasets</li>
+              <li class="flex items-center gap-2"><span>✔️</span> 20 AI Queries / day</li>
+              <li class="flex items-center gap-2 text-[var(--text-muted)]"><span>❌</span> No PDF Scheduled Exports</li>
+              <li class="flex items-center gap-2 text-[var(--text-muted)]"><span>❌</span> No Webhook Ingestion</li>
+            </ul>
+          </div>
+          <button onclick="setOrgPlan('free')" class="mt-6 w-full py-2.5 border border-[var(--border-subtle)] hover:bg-[var(--bg-surface)] rounded-xl text-xs font-semibold transition">
+            Downgrade to Free
+          </button>
+        </div>
+
+        <!-- PRO TIER -->
+        <div class="custom-card border-indigo-500/80 rounded-2xl p-6 relative flex flex-col justify-between shadow-indigo-500/10 shadow-xl" id="card-pro">
+          <div class="absolute -top-3 right-5 bg-gradient-to-r from-indigo-600 to-indigo-500 text-white text-[10px] font-bold px-2.5 py-0.5 rounded-full uppercase tracking-wider shadow">
+            Current Tier
+          </div>
+          <div class="space-y-4">
+            <div class="flex justify-between items-center">
+              <h3 class="font-bold text-base text-indigo-400">Pro Plan</h3>
+              <span id="badge-pro" class="text-xs bg-emerald-500/20 text-emerald-400 px-2.5 py-0.5 rounded-full font-semibold">ACTIVE</span>
+            </div>
+            <div class="text-3xl font-extrabold text-[var(--text-primary)]">$49 <span class="text-xs font-normal text-[var(--text-muted)]">/ mo</span></div>
+            <ul class="text-xs space-y-2.5 text-[var(--text-primary)] font-medium">
+              <li class="flex items-center gap-2"><span>✔️</span> Max 20 Datasets</li>
+              <li class="flex items-center gap-2"><span>✔️</span> 500 AI Queries / day</li>
+              <li class="flex items-center gap-2"><span>✔️</span> Outlier Anomaly Detection</li>
+              <li class="flex items-center gap-2"><span>✔️</span> PDF Export with Playwright</li>
+            </ul>
+          </div>
+          <button onclick="setOrgPlan('pro')" class="mt-6 w-full py-2.5 bg-gradient-to-r from-indigo-600 to-indigo-500 hover:from-indigo-500 hover:to-indigo-600 text-white rounded-xl text-xs font-semibold shadow-md transition">
+            Active Subscription
+          </button>
+        </div>
+
+        <!-- ENTERPRISE TIER -->
+        <div class="custom-card rounded-2xl p-6 flex flex-col justify-between" id="card-enterprise">
+          <div class="space-y-4">
+            <div class="flex justify-between items-center">
+              <h3 class="font-bold text-base text-[var(--text-primary)]">Enterprise</h3>
+              <span id="badge-enterprise" class="hidden text-xs bg-emerald-500/20 text-emerald-400 px-2 py-0.5 rounded font-semibold">ACTIVE</span>
+            </div>
+            <div class="text-3xl font-extrabold text-[var(--text-primary)]">$249 <span class="text-xs font-normal text-[var(--text-muted)]">/ mo</span></div>
+            <ul class="text-xs space-y-2.5 text-[var(--text-secondary)]">
+              <li class="flex items-center gap-2"><span>✔️</span> Unlimited Datasets</li>
+              <li class="flex items-center gap-2"><span>✔️</span> Unlimited AI Queries</li>
+              <li class="flex items-center gap-2"><span>✔️</span> Custom Webhook Endpoints</li>
+              <li class="flex items-center gap-2"><span>✔️</span> Dedicated Postgres Instances</li>
+            </ul>
+          </div>
+          <button onclick="setOrgPlan('enterprise')" class="mt-6 w-full py-2.5 border border-indigo-500/40 hover:bg-indigo-600/20 text-indigo-300 rounded-xl text-xs font-semibold transition">
+            Upgrade to Enterprise
+          </button>
+        </div>
+      </div>
+
+      <div class="custom-card rounded-2xl p-5 space-y-3">
+        <h4 class="font-bold text-sm text-[var(--text-primary)]">🧪 Test Live Feature Gates</h4>
+        <p class="text-xs text-[var(--text-muted)]">
+          When an organization on Free tier attempts to exceed its limits, the backend raises an <code class="text-rose-400 font-mono">HTTP 402 Payment Required</code>:
+        </p>
+        <div class="flex items-center gap-3">
+          <button onclick="testFeatureGate('upload_limit')" class="px-3.5 py-2 bg-[var(--bg-surface)] border border-[var(--border-subtle)] hover:border-indigo-500/50 rounded-xl text-xs font-medium transition text-[var(--text-secondary)]">
+            Test: Upload 3rd Dataset on Free Plan
+          </button>
+          <button onclick="testFeatureGate('ai_limit')" class="px-3.5 py-2 bg-[var(--bg-surface)] border border-[var(--border-subtle)] hover:border-indigo-500/50 rounded-xl text-xs font-medium transition text-[var(--text-secondary)]">
+            Test: 21st AI Query on Free Plan
+          </button>
+        </div>
+        <div id="gateOutput" class="hidden p-3.5 rounded-xl bg-slate-900 border border-slate-800 font-mono text-xs"></div>
+      </div>
+    </section>
+
+    <!-- ==================== 5. ARCHITECTURE & VERIFICATION ==================== -->
+    <section id="view-architecture" class="hidden space-y-6">
+      <div class="flex items-center justify-between">
+        <div>
+          <h2 class="text-2xl font-extrabold tracking-tight text-[var(--text-primary)]">Architecture & Security Defense</h2>
+          <p class="text-xs text-[var(--text-muted)] mt-0.5">3-tier defense pipeline protecting multi-tenant data schemas</p>
+        </div>
+        <span class="text-xs bg-emerald-500/10 text-emerald-400 border border-emerald-500/20 px-3 py-1 rounded-full font-mono font-semibold">
+          Coverage: 88% Backend (72 tests)
+        </span>
+      </div>
+
+      <div class="grid grid-cols-1 md:grid-cols-2 gap-5">
+        <div class="custom-card rounded-2xl p-5 space-y-3">
+          <h3 class="font-bold text-sm flex items-center gap-2 text-[var(--text-primary)]">
+            <span>🛡️</span> 3-Layer SQL Security Defense
+          </h3>
+          <ul class="text-xs space-y-2 text-[var(--text-secondary)] font-mono">
+            <li class="p-3 bg-[var(--bg-surface)] rounded-xl border border-[var(--border-subtle)]">
+              <b class="text-indigo-400">1. AST Parsing:</b> <code>sql_guard.py</code> uses sqlglot to reject non-SELECT nodes (DROP, DELETE, UPDATE) and foreign schemas.
+            </li>
+            <li class="p-3 bg-[var(--bg-surface)] rounded-xl border border-[var(--border-subtle)]">
+              <b class="text-indigo-400">2. Sandboxed Limits:</b> <code>query_runner.py</code> enforces <code>SET TRANSACTION READ ONLY</code>, <code>5s timeout</code>, and row limits.
+            </li>
+            <li class="p-3 bg-[var(--bg-surface)] rounded-xl border border-[var(--border-subtle)]">
+              <b class="text-indigo-400">3. DB Role Separation:</b> <code>insight_readonly</code> role has 0 privileges on the public schema (passwords/users).
+            </li>
+          </ul>
+        </div>
+
+        <div class="custom-card rounded-2xl p-5 space-y-3">
+          <h3 class="font-bold text-sm flex items-center gap-2 text-[var(--text-primary)]">
+            <span>⚙️</span> Ingestion & Real-Time Engine
+          </h3>
+          <ul class="text-xs space-y-2 text-[var(--text-secondary)] font-mono">
+            <li class="p-3 bg-[var(--bg-surface)] rounded-xl border border-[var(--border-subtle)]">
+              <b class="text-emerald-400">1. CSV Sanitization:</b> <code>ingestion.py</code> slugifies headers and maps numeric & date columns into PostgreSQL tables.
+            </li>
+            <li class="p-3 bg-[var(--bg-surface)] rounded-xl border border-[var(--border-subtle)]">
+              <b class="text-emerald-400">2. Real-Time SSE:</b> <code>events.py</code> publishes ingestion updates across Redis pub/sub to the UI EventSource.
+            </li>
+            <li class="p-3 bg-[var(--bg-surface)] rounded-xl border border-[var(--border-subtle)]">
+              <b class="text-emerald-400">3. Anomaly Scans:</b> <code>anomaly.py</code> runs Z-score and IQR algorithms to detect statistical data spikes.
+            </li>
+          </ul>
+        </div>
+      </div>
+    </section>
+
+  </main>
+
+  <!-- ==================== REAL CSV INGESTION MODAL ==================== -->
+  <div id="ingestModal" class="fixed inset-0 bg-black/75 backdrop-blur-md z-50 hidden flex items-center justify-center p-4">
+    <div class="custom-card rounded-3xl max-w-lg w-full p-6 space-y-5 shadow-2xl">
+      <div class="flex items-center justify-between border-b border-[var(--border-subtle)] pb-3.5">
+        <div class="flex items-center gap-2.5">
+          <span class="w-8 h-8 rounded-xl bg-indigo-500/10 text-indigo-400 flex items-center justify-center text-sm">📥</span>
+          <div>
+            <h3 class="font-bold text-sm text-[var(--text-primary)]">Ingest Tabular Dataset</h3>
+            <p class="text-[11px] text-[var(--text-muted)]">Target Schema: <span id="modalOrgSchema" class="text-indigo-400 font-mono">org_1</span></p>
+          </div>
+        </div>
+        <button onclick="closeIngestModal()" class="text-[var(--text-muted)] hover:text-white p-1 rounded-lg">✕</button>
+      </div>
+
+      <!-- File Dropzone -->
+      <div id="dropzone" ondragover="handleDragOver(event)" ondragleave="handleDragLeave(event)" ondrop="handleDrop(event)"
+        class="border-2 border-dashed border-[var(--border-subtle)] hover:border-indigo-500/70 rounded-2xl p-7 flex flex-col items-center justify-center text-center cursor-pointer transition bg-[var(--bg-surface)]/50"
+        onclick="document.getElementById('csvFileInput').click()">
+        <span class="text-3xl mb-2">📄</span>
+        <p class="font-semibold text-xs text-[var(--text-primary)] mb-1">Click to select or drag and drop any CSV file</p>
+        <p class="text-[11px] text-[var(--text-muted)]">Automatic header sanitization & type detection</p>
+        <input type="file" id="csvFileInput" accept=".csv" class="hidden" onchange="handleFileSelect(event)">
+      </div>
+
+      <!-- Preset CSV options -->
+      <div class="space-y-2">
+        <p class="text-[11px] font-bold uppercase tracking-wider text-[var(--text-muted)]">Or click a pre-loaded sample dataset:</p>
+        <div class="grid grid-cols-2 gap-2.5">
+          <button onclick="loadSampleCsv('acme_sales')" class="p-3 text-left border border-[var(--border-subtle)] bg-[var(--bg-surface)] hover:border-indigo-500/50 rounded-xl text-xs space-y-1 transition">
+            <div class="font-bold text-indigo-400">🛍️ acme_sales.csv</div>
+            <div class="text-[10px] text-[var(--text-muted)]">10,705 rows · Sales by region</div>
+          </button>
+          <button onclick="loadSampleCsv('globex_subscriptions')" class="p-3 text-left border border-[var(--border-subtle)] bg-[var(--bg-surface)] hover:border-indigo-500/50 rounded-xl text-xs space-y-1 transition">
+            <div class="font-bold text-sky-400">💼 globex_subscriptions.csv</div>
+            <div class="text-[10px] text-[var(--text-muted)]">1,200 rows · SaaS MRR & Churn</div>
+          </button>
+        </div>
+      </div>
+
+      <!-- Ingestion Progress -->
+      <div id="ingestProgress" class="hidden bg-slate-900 border border-slate-800 rounded-xl p-4 space-y-2 font-mono text-xs">
+        <div class="flex items-center justify-between text-indigo-400">
+          <span id="ingestStatusText">Reading file...</span>
+          <span class="animate-spin">🔄</span>
+        </div>
+        <div class="w-full bg-slate-800 rounded-full h-1.5 overflow-hidden">
+          <div id="ingestProgressBar" class="bg-indigo-500 h-1.5 rounded-full w-0 transition-all duration-300"></div>
+        </div>
+      </div>
+
+      <div class="flex justify-end gap-2 pt-2 border-t border-[var(--border-subtle)]">
+        <button onclick="closeIngestModal()" class="px-4 py-2 border border-[var(--border-subtle)] hover:bg-[var(--bg-surface)] rounded-xl text-xs font-semibold text-[var(--text-secondary)]">Cancel</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- ==================== REAL DATASET ROWS PREVIEW MODAL ==================== -->
+  <div id="previewModal" class="fixed inset-0 bg-black/75 backdrop-blur-md z-50 hidden flex items-center justify-center p-4">
+    <div class="custom-card rounded-3xl max-w-4xl w-full p-6 space-y-4 shadow-2xl flex flex-col max-h-[85vh]">
+      <div class="flex items-center justify-between border-b border-[var(--border-subtle)] pb-3">
+        <div>
+          <h3 class="font-bold text-sm flex items-center gap-2 text-[var(--text-primary)]">
+            <span>🔍</span> Dataset Preview: <span id="previewTableName" class="text-indigo-400 font-mono">org_1.acme_sales</span>
+          </h3>
+          <p class="text-xs text-[var(--text-muted)]" id="previewSubtitle">Showing top records</p>
+        </div>
+        <button onclick="closePreviewModal()" class="text-[var(--text-muted)] hover:text-white p-1 rounded-lg">✕</button>
+      </div>
+
+      <div class="flex-1 overflow-auto border border-[var(--border-subtle)] rounded-xl bg-[var(--bg-surface)]/60">
+        <table class="w-full text-xs text-left font-mono" id="previewTable">
+          <thead class="bg-[var(--bg-surface)] border-b border-[var(--border-subtle)] text-[var(--text-muted)] sticky top-0" id="previewThead">
+            <!-- Headers -->
+          </thead>
+          <tbody class="divide-y divide-[var(--border-subtle)]" id="previewTbody">
+            <!-- Rows -->
+          </tbody>
+        </table>
+      </div>
+
+      <div class="flex items-center justify-between pt-2 border-t border-[var(--border-subtle)] text-xs text-[var(--text-muted)]">
+        <span>Sanitized and type-checked</span>
+        <button onclick="closePreviewModal()" class="px-4 py-2 bg-indigo-600 hover:bg-indigo-700 text-white rounded-xl text-xs font-semibold transition">Close</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- JAVASCRIPT LOGIC -->
+  <script>
+    let currentTenant = 'acme';
+    let currentRole = 'owner';
+    let currentTab = 'dashboard';
+
+    const datasetsStore = {
+      acme: [
+        {
+          id: 1,
+          name: 'acme_sales',
+          source: 'CSV Upload',
+          rows: 1500,
+          anomalies: 1,
+          columns: [
+            { name: 'order_id', type: 'INT' },
+            { name: 'customer_id', type: 'INT' },
+            { name: 'sale_date', type: 'DATE' },
+            { name: 'amount', type: 'NUMERIC' },
+            { name: 'category', type: 'VARCHAR' },
+            { name: 'region', type: 'VARCHAR' }
+          ],
+          sampleRows: [
+            ['ORD-101', 'CUST-802', '2026-01-15', '$866.38', 'Electronics', 'North'],
+            ['ORD-102', 'CUST-311', '2026-01-15', '$455.72', 'Apparel', 'North'],
+            ['ORD-103', 'CUST-529', '2026-01-16', '$584.82', 'Home', 'South'],
+            ['ORD-104', 'CUST-914', '2026-01-16', '$240.83', 'Grocery', 'East'],
+            ['ORD-105', 'CUST-218', '2026-01-17', '$981.16', 'Electronics', 'West'],
+            ['ORD-842', 'CUST-991', '2026-02-28', '$14,500.00', 'Electronics', 'North']
+          ]
+        },
+        {
+          id: 2,
+          name: 'acme_marketing',
+          source: 'Webhook Receiver',
+          rows: 1920,
+          anomalies: 0,
+          columns: [
+            { name: 'campaign', type: 'VARCHAR' },
+            { name: 'clicks', type: 'INT' },
+            { name: 'impressions', type: 'INT' },
+            { name: 'spend', type: 'NUMERIC' },
+            { name: 'conversions', type: 'INT' }
+          ],
+          sampleRows: [
+            ['Spring Campaign 2026', '12,400', '180,000', '$3,200', '420'],
+            ['Google Retargeting', '8,900', '95,000', '$2,100', '310'],
+            ['Influencer Tier 1', '14,200', '250,000', '$4,800', '580']
+          ]
+        }
+      ],
+      globex: [
+        {
+          id: 101,
+          name: 'globex_subscriptions',
+          source: 'CSV Upload',
+          rows: 1200,
+          anomalies: 0,
+          columns: [
+            { name: 'customer_id', type: 'VARCHAR' },
+            { name: 'signup_date', type: 'DATE' },
+            { name: 'plan', type: 'VARCHAR' },
+            { name: 'country', type: 'VARCHAR' },
+            { name: 'seats', type: 'INT' },
+            { name: 'mrr_usd', type: 'NUMERIC' }
+          ],
+          sampleRows: [
+            ['C00001', '2026-07-08', 'Starter', 'Brazil', '5', '$49'],
+            ['C00002', '2026-06-21', 'Starter', 'India', '14', '$49'],
+            ['C00003', '2026-03-09', 'Starter', 'India', '12', '$49'],
+            ['C00004', '2026-01-03', 'Growth', 'India', '37', '$199'],
+            ['C00005', '2026-12-25', 'Starter', 'Germany', '6', '$49']
+          ]
+        }
+      ]
+    };
+
+    function renderDatasetsList() {
+      const container = document.getElementById('datasetsList');
+      const list = datasetsStore[currentTenant] || [];
+      const schema = currentTenant === 'acme' ? 'org_1' : 'org_2';
+      
+      let totalRows = 0;
+      container.innerHTML = '';
+
+      if (list.length === 0) {
+        container.innerHTML = `<div class="p-8 text-center text-[var(--text-muted)]">No datasets yet in ${schema}. Click Ingest to upload one.</div>`;
+        return;
+      }
+
+      list.forEach(ds => {
+        totalRows += ds.rows;
+        const row = document.createElement('div');
+        row.className = 'p-4 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3 hover:bg-[var(--bg-surface)]/50 transition';
+        row.innerHTML = `
+          <div class="space-y-1">
+            <div class="flex items-center gap-2">
+              <span class="font-bold text-sm text-[var(--text-primary)]">${ds.name}</span>
+              <span class="bg-indigo-500/10 text-indigo-400 border border-indigo-500/20 px-2 py-0.5 rounded text-[10px] font-mono">${schema}.${ds.name}</span>
+              <span class="bg-emerald-500/10 text-emerald-400 border border-emerald-500/20 px-2 py-0.5 rounded text-[10px] font-mono">${ds.source}</span>
+              ${ds.anomalies > 0 ? `<span class="bg-rose-500/10 text-rose-400 border border-rose-500/20 px-2 py-0.5 rounded text-[10px] font-mono">${ds.anomalies} Anomaly Detected</span>` : ''}
+            </div>
+            <p class="text-[var(--text-muted)] text-[11px]">
+              ${ds.rows.toLocaleString()} rows · ${ds.columns.length} columns: <code class="text-zinc-400">${ds.columns.map(c => `${c.name} (${c.type})`).join(', ')}</code>
+            </p>
+          </div>
+          <div class="flex items-center gap-2 shrink-0">
+            ${ds.anomalies > 0 ? `
+              <button onclick="inspectAnomalies('${ds.name}')" class="px-3 py-1.5 border border-rose-800/80 text-rose-400 hover:bg-rose-950/40 rounded-xl text-xs font-semibold transition">
+                🔍 Anomalies
+              </button>` : ''}
+            <button onclick="previewDataset('${ds.name}')" class="px-3 py-1.5 border border-[var(--border-subtle)] hover:bg-[var(--bg-surface)] rounded-xl text-xs font-semibold transition text-[var(--text-secondary)]">
+              Preview
+            </button>
+            <button onclick="deleteDataset('${ds.name}')" class="p-1.5 text-zinc-500 hover:text-rose-400 rounded-lg text-xs transition">
+              🗑️
+            </button>
+          </div>
+        `;
+        container.appendChild(row);
+      });
+
+      document.getElementById('totalRowsCount').textContent = `Total Rows: ${totalRows.toLocaleString()}`;
+      document.getElementById('currentSchemaName').textContent = schema;
+      document.getElementById('modalOrgSchema').textContent = schema;
+      document.getElementById('chatSchemaList').textContent = list.map(d => `${schema}.${d.name}`).join(', ');
+    }
+
+    function openIngestModal() {
+      if (currentRole === 'viewer') {
+        alert("RBAC Protection: Viewer role cannot ingest datasets. Please switch role to Admin or Owner.");
+        return;
+      }
+      if (currentTenant === 'globex' && (datasetsStore.globex.length >= 2)) {
+        alert("HTTP 402 Payment Required: Free plan limit (2 datasets) reached. Upgrade to Pro in Settings to upload more.");
+        return;
+      }
+      document.getElementById('ingestModal').classList.remove('hidden');
+      document.getElementById('ingestProgress').classList.add('hidden');
+      document.getElementById('ingestProgressBar').style.width = '0%';
+    }
+
+    function closeIngestModal() {
+      document.getElementById('ingestModal').classList.add('hidden');
+    }
+
+    function openPreviewModal() {
+      document.getElementById('previewModal').classList.remove('hidden');
+    }
+
+    function closePreviewModal() {
+      document.getElementById('previewModal').classList.add('hidden');
+    }
+
+    function handleDragOver(e) {
+      e.preventDefault();
+      document.getElementById('dropzone').classList.add('border-indigo-500', 'bg-indigo-950/20');
+    }
+
+    function handleDragLeave(e) {
+      document.getElementById('dropzone').classList.remove('border-indigo-500', 'bg-indigo-950/20');
+    }
+
+    function handleDrop(e) {
+      e.preventDefault();
+      handleDragLeave(e);
+      if (e.dataTransfer.files && e.dataTransfer.files[0]) {
+        processUploadedCsv(e.dataTransfer.files[0]);
+      }
+    }
+
+    function handleFileSelect(e) {
+      if (e.target.files && e.target.files[0]) {
+        processUploadedCsv(e.target.files[0]);
+      }
+    }
+
+    function processUploadedCsv(file) {
+      const progressBox = document.getElementById('ingestProgress');
+      const progressBar = document.getElementById('ingestProgressBar');
+      const statusText = document.getElementById('ingestStatusText');
+
+      progressBox.classList.remove('hidden');
+      statusText.textContent = `Reading ${file.name}...`;
+      progressBar.style.width = '25%';
+
+      const reader = new FileReader();
+      reader.onload = function(evt) {
+        const text = evt.target.result;
+        setTimeout(() => {
+          statusText.textContent = `Sanitizing headers & inferring data types...`;
+          progressBar.style.width = '65%';
+
+          setTimeout(() => {
+            parseAndIngestCsvText(file.name.replace(/\.csv$/i, ''), text);
+            statusText.textContent = `Creating table in ${currentTenant === 'acme' ? 'org_1' : 'org_2'}...`;
+            progressBar.style.width = '100%';
+
+            setTimeout(() => {
+              closeIngestModal();
+              showToast(`⚡ SSE Stream: Ingested ${file.name} successfully!`);
+            }, 450);
+          }, 350);
+        }, 250);
+      };
+      reader.readAsText(file);
+    }
+
+    function slugify(name) {
+      return name.toLowerCase().replace(/[^a-z0-9]+/g, '_').replace(/^_+|_+$/g, '') || 'col';
+    }
+
+    function parseAndIngestCsvText(tableName, csvText) {
+      const lines = csvText.trim().split(/\r?\n/).filter(line => line.trim().length > 0);
+      if (lines.length < 2) {
+        alert("The uploaded CSV is empty or has only headers.");
+        return;
+      }
+
+      const rawHeaders = lines[0].split(',').map(h => h.trim().replace(/^["']|["']$/g, ''));
+      const slugifiedHeaders = rawHeaders.map(slugify);
+
+      const parsedRows = [];
+      for (let i = 1; i < lines.length; i++) {
+        const cols = lines[i].split(',').map(c => c.trim().replace(/^["']|["']$/g, ''));
+        parsedRows.push(cols);
+      }
+
+      const inferredColumns = slugifiedHeaders.map((colName, idx) => {
+        let isNumeric = true;
+        let isDate = colName.includes('date') || colName.includes('time');
+
+        for (let r = 0; r < Math.min(parsedRows.length, 50); r++) {
+          const val = parsedRows[r][idx];
+          if (val === undefined || val === '') continue;
+          if (isNaN(Number(val.replace(/[$,]/g, '')))) {
+            isNumeric = false;
+            break;
+          }
+        }
+
+        let type = 'VARCHAR';
+        if (isNumeric) type = 'NUMERIC';
+        else if (isDate) type = 'DATE';
+
+        return { name: colName, type };
+      });
+
+      let anomaliesCount = 0;
+      const numericIdx = inferredColumns.findIndex(c => c.type === 'NUMERIC');
+      if (numericIdx !== -1) {
+        const nums = parsedRows.map(r => Number(r[numericIdx]?.replace(/[$,]/g, '') || 0)).filter(n => !isNaN(n));
+        if (nums.length > 5) {
+          const mean = nums.reduce((a, b) => a + b, 0) / nums.length;
+          const variance = nums.reduce((a, b) => a + Math.pow(b - mean, 2), 0) / nums.length;
+          const stdDev = Math.sqrt(variance) || 1;
+
+          parsedRows.forEach((row, i) => {
+            const val = Number(row[numericIdx]?.replace(/[$,]/g, '') || 0);
+            const z = (val - mean) / stdDev;
+            if (Math.abs(z) > 3.0) {
+              anomaliesCount++;
+              addAnomalyRecord(tableName, inferredColumns[numericIdx].name, `$${val.toFixed(2)}`, `$${mean.toFixed(2)}`, `${z > 0 ? '+' : ''}${z.toFixed(1)}σ`);
+            }
+          });
+        }
+      }
+
+      const newDataset = {
+        id: Date.now(),
+        name: slugify(tableName),
+        source: 'CSV Upload',
+        rows: parsedRows.length,
+        anomalies: anomaliesCount,
+        columns: inferredColumns,
+        sampleRows: parsedRows.slice(0, 25)
+      };
+
+      datasetsStore[currentTenant].unshift(newDataset);
+      renderDatasetsList();
+    }
+
+    function addAnomalyRecord(table, col, val, mean, zScore) {
+      const tbody = document.getElementById('anomaliesTbody');
+      const tr = document.createElement('tr');
+      tr.className = 'text-rose-300';
+      tr.innerHTML = `
+        <td class="pt-2">#${Math.floor(Math.random() * 900) + 100}</td>
+        <td class="pt-2">${table}</td>
+        <td class="pt-2">${col}</td>
+        <td class="pt-2 font-bold text-rose-400">${val}</td>
+        <td class="pt-2">${mean}</td>
+        <td class="pt-2 font-bold text-rose-400">${zScore}</td>
+        <td class="pt-2 text-[var(--text-muted)]">Outlier (|Z| > 3.0)</td>
+      `;
+      tbody.appendChild(tr);
+    }
+
+    function loadSampleCsv(sampleType) {
+      if (sampleType === 'acme_sales') {
+        const dummyCsv = `order_date,region,category,units,revenue,discount_pct
+2026-01-01,North,Electronics,21,866.38,0.21
+2026-01-01,North,Apparel,24,455.72,0.24
+2026-01-01,South,Home,20,584.82,0.03
+2026-01-02,East,Grocery,15,240.83,0.23
+2026-01-02,West,Electronics,20,981.16,0.11
+2026-01-03,South,Apparel,15,347.46,0.02
+2026-01-03,North,Home,24,717.12,0.19
+2026-01-04,North,Electronics,42,14500.00,0.05
+2026-01-04,East,Electronics,17,743.45,0.12
+2026-01-05,West,Apparel,19,412.30,0.15`;
+        processUploadedCsv(new File([dummyCsv], "acme_sales_q1.csv", { type: "text/csv" }));
+      } else {
+        const dummyCsv = `customer_id,signup_date,plan,country,seats,mrr_usd,churned
+C00001,2026-07-08,Starter,Brazil,5,49,False
+C00002,2026-06-21,Starter,India,14,49,False
+C00003,2026-03-09,Starter,India,12,49,False
+C00004,2026-01-03,Growth,India,37,199,True
+C00005,2026-12-25,Starter,Germany,6,49,False
+C00006,2026-07-05,Starter,Japan,33,49,False
+C00007,2026-02-03,Growth,Japan,28,199,True
+C00008,2026-04-17,Starter,USA,25,49,True
+C00009,2026-10-13,Scale,USA,33,799,False`;
+        processUploadedCsv(new File([dummyCsv], "globex_subscriptions_2026.csv", { type: "text/csv" }));
+      }
+    }
+
+    function previewDataset(name) {
+      const list = datasetsStore[currentTenant] || [];
+      const ds = list.find(d => d.name === name);
+      if (!ds) return;
+
+      const schema = currentTenant === 'acme' ? 'org_1' : 'org_2';
+      document.getElementById('previewTableName').textContent = `${schema}.${ds.name}`;
+      document.getElementById('previewSubtitle').textContent = `Top records from ${ds.rows.toLocaleString()} total rows`;
+
+      const thead = document.getElementById('previewThead');
+      thead.innerHTML = `<tr>${ds.columns.map(c => `<th class="p-3">${c.name} <span class="text-[10px] text-zinc-500 font-normal">(${c.type})</span></th>`).join('')}</tr>`;
+
+      const tbody = document.getElementById('previewTbody');
+      tbody.innerHTML = ds.sampleRows.map(row => `
+        <tr class="hover:bg-zinc-800/40">
+          ${row.map(cell => `<td class="p-3 text-zinc-300">${cell}</td>`).join('')}
+        </tr>
+      `).join('');
+
+      openPreviewModal();
+    }
+
+    function deleteDataset(name) {
+      if (currentRole === 'viewer') {
+        alert("RBAC: Viewer cannot delete datasets.");
+        return;
+      }
+      if (!confirm(`Are you sure you want to delete ${name}?`)) return;
+      datasetsStore[currentTenant] = datasetsStore[currentTenant].filter(d => d.name !== name);
+      renderDatasetsList();
+      showToast(`Dataset ${name} deleted.`);
+    }
+
+    function inspectAnomalies(name) {
+      const el = document.getElementById('anomalyBox');
+      el.scrollIntoView({ behavior: 'smooth' });
+      el.classList.add('ring-2', 'ring-rose-500');
+      setTimeout(() => el.classList.remove('ring-2', 'ring-rose-500'), 1500);
+    }
+
+    function showToast(msg) {
+      const container = document.getElementById('toastContainer');
+      const toast = document.createElement('div');
+      toast.className = 'bg-slate-900 border border-indigo-500/40 text-white px-4 py-2.5 rounded-2xl shadow-2xl text-xs flex items-center gap-2.5 transform transition-all duration-300';
+      toast.innerHTML = `<span class="w-2 h-2 rounded-full bg-emerald-400"></span> ${msg}`;
+      container.appendChild(toast);
+      setTimeout(() => {
+        toast.style.opacity = '0';
+        setTimeout(() => toast.remove(), 300);
+      }, 4000);
+    }
+
+    function switchTab(tab) {
+      currentTab = tab;
+      const views = ['dashboard', 'ai', 'datasets', 'billing', 'architecture'];
+      views.forEach(v => {
+        const el = document.getElementById(`view-${v}`);
+        const btn = document.getElementById(`tab-${v}`);
+        if (v === tab) {
+          el.classList.remove('hidden');
+          btn.classList.add('active');
+        } else {
+          el.classList.add('hidden');
+          btn.classList.remove('active');
+        }
+      });
+      if (tab === 'datasets') renderDatasetsList();
+    }
+
+    function switchTenant(tenant) {
+      currentTenant = tenant;
+      const dashTitle = document.getElementById('dashTitle');
+      const badge = document.getElementById('tenantBadge');
+      
+      const badgeFree = document.getElementById('badge-free');
+      const badgePro = document.getElementById('badge-pro');
+      const badgeEnt = document.getElementById('badge-enterprise');
+      
+      if (tenant === 'acme') {
+        dashTitle.textContent = 'Acme Retail Executive Overview';
+        badge.textContent = 'schema: org_1';
+        badgePro.classList.remove('hidden');
+        badgeFree.classList.add('hidden');
+        badgeEnt.classList.add('hidden');
+        document.getElementById('aiQuotaBadge').textContent = 'Daily Quota: 18 / 500 Used (Pro)';
+      } else {
+        dashTitle.textContent = 'Globex SaaS Performance Dashboard';
+        badge.textContent = 'schema: org_2';
+        badgeFree.classList.remove('hidden');
+        badgePro.classList.add('hidden');
+        badgeEnt.classList.add('hidden');
+        document.getElementById('aiQuotaBadge').textContent = 'Daily Quota: 20 / 20 Used (Free Limit Hit)';
+      }
+      renderDatasetsList();
+    }
+
+    function switchRole(role) {
+      currentRole = role;
+      const addBtn = document.getElementById('addWidgetBtn');
+      if (role === 'viewer') {
+        addBtn.classList.add('hidden');
+        showToast(`Switched to VIEWER role (Read-only mode)`);
+      } else {
+        addBtn.classList.remove('hidden');
+        showToast(`Switched to ${role.toUpperCase()} role`);
+      }
+    }
+
+    function setOrgPlan(plan) {
+      showToast(`Stripe subscription updated to ${plan.toUpperCase()}`);
+      if (plan === 'free') {
+        document.getElementById('badge-free').classList.remove('hidden');
+        document.getElementById('badge-pro').classList.add('hidden');
+        document.getElementById('badge-enterprise').classList.add('hidden');
+      } else if (plan === 'pro') {
+        document.getElementById('badge-free').classList.add('hidden');
+        document.getElementById('badge-pro').classList.remove('hidden');
+        document.getElementById('badge-enterprise').classList.add('hidden');
+      } else {
+        document.getElementById('badge-free').classList.add('hidden');
+        document.getElementById('badge-pro').classList.add('hidden');
+        document.getElementById('badge-enterprise').classList.remove('hidden');
+      }
+    }
+
+    function testFeatureGate(type) {
+      const box = document.getElementById('gateOutput');
+      box.classList.remove('hidden');
+      if (type === 'upload_limit') {
+        box.innerHTML = `<span class="text-rose-400 font-bold">HTTP 402 Payment Required:</span> Free plan is limited to 2 datasets. Upgrade to Pro in Settings to upload more.`;
+      } else {
+        box.innerHTML = `<span class="text-rose-400 font-bold">HTTP 402 Payment Required:</span> Daily AI query limit (20) reached for Free plan. Quota resets at 00:00 UTC.`;
+      }
+    }
+
+    function toggleTheme() {
+      document.body.classList.toggle('light');
+    }
+
+    function setQuery(text) {
+      document.getElementById('aiInput').value = text;
+      handleChatSubmit(new Event('submit'));
+    }
+
+    function handleChatSubmit(e) {
+      if (e) e.preventDefault();
+      const input = document.getElementById('aiInput');
+      const query = input.value.trim();
+      if (!query) return;
+
+      const chatBox = document.getElementById('chatMessages');
+      const userMsg = document.createElement('div');
+      userMsg.className = 'flex gap-3 justify-end items-start';
+      userMsg.innerHTML = `<div class="bg-gradient-to-r from-indigo-600 to-indigo-500 text-white p-3.5 rounded-2xl max-w-xl text-xs shadow-md"><p class="font-medium">${escapeHtml(query)}</p></div>`;
+      chatBox.appendChild(userMsg);
+      input.value = '';
+
+      if (query.toUpperCase().includes('DROP') || query.toUpperCase().includes('DELETE') || query.toUpperCase().includes('USERS')) {
+        setTimeout(() => {
+          const blockMsg = document.createElement('div');
+          blockMsg.className = 'flex gap-3.5 items-start';
+          blockMsg.innerHTML = `
+            <div class="w-8 h-8 rounded-xl bg-rose-600 text-white flex items-center justify-center font-bold text-xs shrink-0 shadow-md shadow-rose-600/30">🛡️</div>
+            <div class="bg-rose-950/40 border border-rose-800/80 p-4 rounded-2xl max-w-2xl text-xs space-y-2.5">
+              <div class="flex items-center gap-1.5 text-rose-400 font-bold">
+                <span>⛔ Security Exception: UnsafeSQL (Blocked by sql_guard)</span>
+              </div>
+              <p class="text-rose-200">The SQL AST parser intercepted destructive commands or unauthorized table access. Only single SELECT statements on assigned tenant schemas are permitted.</p>
+              <div class="bg-black/50 p-2.5 rounded-lg text-[11px] font-mono text-zinc-400">Rule triggered: Reject non-SELECT AST nodes & public schema table access</div>
+            </div>`;
+          chatBox.appendChild(blockMsg);
+          chatBox.scrollTop = chatBox.scrollHeight;
+        }, 300);
+        return;
+      }
+
+      setTimeout(() => {
+        const isFollowUp = query.toLowerCase().includes('filter') || query.toLowerCase().includes('that');
+        let sql = '';
+        let explanation = '';
+        let chartHtml = '';
+
+        if (isFollowUp) {
+          sql = `SELECT date_trunc('month', sale_date) AS month, sum(amount) AS revenue\nFROM org_1.acme_sales\nWHERE category = 'Electronics' AND sale_date BETWEEN '2026-01-01' AND '2026-03-31'\nGROUP BY 1 ORDER BY 1;`;
+          explanation = `Understood! Using conversational memory of the previous question, I filtered specifically for the 'Electronics' category across Q1 2026.`;
+          chartHtml = `
+            <div class="h-32 w-full flex items-end gap-3.5 pt-4 px-2">
+              <div class="flex-1 flex flex-col items-center gap-1.5"><span class="text-[10px] font-mono text-indigo-400 font-semibold">$24k</span><div class="w-full bg-gradient-to-t from-indigo-600 to-indigo-500 rounded-t-lg h-16"></div><span class="text-[10px] text-[var(--text-muted)] font-medium">Jan</span></div>
+              <div class="flex-1 flex flex-col items-center gap-1.5"><span class="text-[10px] font-mono text-indigo-400 font-semibold">$31k</span><div class="w-full bg-gradient-to-t from-indigo-600 to-indigo-500 rounded-t-lg h-20"></div><span class="text-[10px] text-[var(--text-muted)] font-medium">Feb</span></div>
+              <div class="flex-1 flex flex-col items-center gap-1.5"><span class="text-[10px] font-mono text-indigo-400 font-semibold">$38k</span><div class="w-full bg-gradient-to-t from-indigo-600 to-indigo-500 rounded-t-lg h-24"></div><span class="text-[10px] text-[var(--text-muted)] font-medium">Mar</span></div>
+            </div>`;
+        } else {
+          sql = `SELECT region, sum(amount) AS total_revenue\nFROM org_1.acme_sales\nGROUP BY region ORDER BY total_revenue DESC;`;
+          explanation = `I aggregated sales amounts across all regions from your uploaded CSV. North America generated the highest revenue ($88,400).`;
+          chartHtml = `
+            <div class="h-32 w-full flex items-end gap-3.5 pt-4 px-2">
+              <div class="flex-1 flex flex-col items-center gap-1.5"><span class="text-[10px] font-mono text-sky-400 font-semibold">$88k</span><div class="w-full bg-gradient-to-t from-sky-600 to-sky-400 rounded-t-lg h-24"></div><span class="text-[10px] text-[var(--text-muted)] font-medium">North Am.</span></div>
+              <div class="flex-1 flex flex-col items-center gap-1.5"><span class="text-[10px] font-mono text-sky-400 font-semibold">$54k</span><div class="w-full bg-gradient-to-t from-sky-600 to-sky-400 rounded-t-lg h-16"></div><span class="text-[10px] text-[var(--text-muted)] font-medium">Europe</span></div>
+              <div class="flex-1 flex flex-col items-center gap-1.5"><span class="text-[10px] font-mono text-sky-400 font-semibold">$32k</span><div class="w-full bg-gradient-to-t from-sky-600 to-sky-400 rounded-t-lg h-10"></div><span class="text-[10px] text-[var(--text-muted)] font-medium">Asia-Pac</span></div>
+            </div>`;
+        }
+
+        const aiMsg = document.createElement('div');
+        aiMsg.className = 'flex gap-3.5 items-start';
+        const msgId = 'msg_' + Date.now();
+        aiMsg.innerHTML = `
+          <div class="w-8 h-8 rounded-xl bg-gradient-to-tr from-indigo-600 to-sky-400 text-white flex items-center justify-center font-bold text-xs shrink-0 shadow-md">AI</div>
+          <div class="bg-[var(--bg-surface)] border border-[var(--border-subtle)] p-4 rounded-2xl max-w-2xl text-xs space-y-3 w-full shadow-sm">
+            <p class="text-[var(--text-primary)] leading-relaxed">${explanation}</p>
+            <div class="bg-[var(--bg-card)] border border-[var(--border-subtle)] p-3.5 rounded-xl">${chartHtml}</div>
+            <div class="flex items-center justify-between pt-1 border-t border-[var(--border-subtle)] text-[11px]">
+              <button onclick="document.getElementById('${msgId}').classList.toggle('hidden')" class="text-indigo-400 hover:underline font-medium">🔍 Show SQL</button>
+              <button onclick="showToast('Chart pinned to dashboard!'); switchTab('dashboard');" class="px-2.5 py-1 bg-indigo-600/20 hover:bg-indigo-600 text-indigo-300 hover:text-white rounded-lg transition text-[10px] font-medium">📌 Pin to Dashboard</button>
+            </div>
+            <div id="${msgId}" class="hidden bg-slate-950 p-3 rounded-xl font-mono text-[11px] text-emerald-400 border border-slate-800"><pre class="whitespace-pre-wrap">${sql}</pre></div>
+          </div>`;
+        chatBox.appendChild(aiMsg);
+        chatBox.scrollTop = chatBox.scrollHeight;
+      }, 500);
+    }
+
+    function simulatePdfExport() {
+      showToast("Playwright Headless Chromium triggered! Generated 2-page PDF report.");
+    }
+
+    function openWidgetModal() {
+      showToast("Widget Editor: Select dataset columns & chart type to add new widget.");
+    }
+
+    function escapeHtml(text) {
+      const div = document.createElement('div');
+      div.textContent = text;
+      return div.innerHTML;
+    }
+
+    renderDatasetsList();
+  </script>
+</body>
+</html>

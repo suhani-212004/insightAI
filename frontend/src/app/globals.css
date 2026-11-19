@@ -1,0 +1,19 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+@import "react-grid-layout/css/styles.css";
+@import "react-resizable/css/styles.css";
+
+:root { color-scheme: light dark; }
+body { @apply bg-slate-50 text-slate-900 antialiased dark:bg-slate-950 dark:text-slate-100; }
+
+@layer components {
+  .field {
+    @apply w-full rounded-lg border border-slate-300 bg-white px-3 py-2 text-sm outline-none transition
+      focus:border-brand-500 focus:ring-2 focus:ring-brand-500/20 dark:border-slate-700 dark:bg-slate-900;
+  }
+}
+
+.react-grid-item.react-grid-placeholder { @apply rounded-xl bg-brand-500/20; }
+@media print { .no-print { display: none !important; } }
