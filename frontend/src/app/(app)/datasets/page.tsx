@@ -48,8 +48,10 @@ export default function DatasetsPage() {
 
   async function remove(d: Dataset) {
     if (!confirm(`Delete ${d.name}? Widgets that use it will stop working.`)) return;
-    await api(`/datasets/${d.id}`, { method: "DELETE" });
-    load();
+    try {
+      await api(`/datasets/${d.id}`, { method: "DELETE" });
+      load();
+    } catch (e) { setError((e as Error).message); }
   }
 
   return (
@@ -90,7 +92,7 @@ export default function DatasetsPage() {
         <section className="mt-10">
           <h2 className="mb-3 text-lg font-semibold">Connectors</h2>
           <div className="space-y-2">
-            {connectors.map((c) => <ConnectorRow key={c.id} c={c} onChange={load} />)}
+            {connectors.map((c) => <ConnectorRow key={c.id} c={c} onChange={load} onError={setError} />)}
           </div>
         </section>
       )}
@@ -100,16 +102,34 @@ export default function DatasetsPage() {
   );
 }
 
-function ConnectorRow({ c, onChange }: { c: Connector; onChange: () => void }) {
+function ConnectorRow({ c, onChange, onError }: { c: Connector; onChange: () => void; onError: (msg: string) => void }) {
   const url = c.webhook_url ? `${API_URL}${c.webhook_url}` : String(c.config.url ?? "");
+  const [copied, setCopied] = useState(false);
+  const [busy, setBusy] = useState(false);
+
+  async function call(path: string, method: string) {
+    setBusy(true);
+    try { await api(path, { method }); onChange(); }
+    catch (e) { onError((e as Error).message); }
+    finally { setBusy(false); }
+  }
+
+  async function copy() {
+    try {
+      await navigator.clipboard.writeText(url);
+      setCopied(true);
+      setTimeout(() => setCopied(false), 1500);
+    } catch { onError("Couldn't access the clipboard. Copy the URL manually."); }
+  }
+
   return (
     <Card className="flex flex-wrap items-center gap-3 py-3 text-sm">
       <Badge tone="green">{c.type === "webhook" ? "Webhook" : "API polling"}</Badge>
       <code className="min-w-0 flex-1 truncate text-xs">{url}</code>
       {c.last_status && <span className="text-xs text-slate-500">{c.last_status}</span>}
-      {c.type === "webhook" && <Button size="sm" variant="ghost" onClick={() => navigator.clipboard.writeText(url)}><Copy size={13} /> Copy URL</Button>}
-      {c.type === "api_poll" && <Button size="sm" variant="ghost" onClick={async () => { await api(`/connectors/${c.id}/run`, { method: "POST" }); onChange(); }}><Play size={13} /> Run now</Button>}
-      <Button size="sm" variant="ghost" onClick={async () => { await api(`/connectors/${c.id}`, { method: "DELETE" }); onChange(); }}><Trash2 size={13} /></Button>
+      {c.type === "webhook" && <Button size="sm" variant="ghost" onClick={copy}><Copy size={13} /> {copied ? "Copied" : "Copy URL"}</Button>}
+      {c.type === "api_poll" && <Button size="sm" variant="ghost" disabled={busy} onClick={() => call(`/connectors/${c.id}/run`, "POST")}><Play size={13} /> Run now</Button>}
+      <Button size="sm" variant="ghost" disabled={busy} aria-label="Delete connector" onClick={() => call(`/connectors/${c.id}`, "DELETE")}><Trash2 size={13} /></Button>
     </Card>
   );
 }

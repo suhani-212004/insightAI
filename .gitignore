@@ -1,15 +1,31 @@
+# Environment files & secrets
 .env
 .env.local
+**/.env
+**/.env.local
+!**/.env.example
+!**/.env.local.example
+
+# Python
 __pycache__/
-*.pyc
+*.py[cod]
+*$py.class
 .venv/
+*/.venv/
 .pytest_cache/
 .coverage
 htmlcov/
+
+# Node / Next.js
 node_modules/
+*/node_modules/
 .next/
+*/.next/
 *.tsbuildinfo
 coverage/
-.DS_Store
-*.zip
 
+# OS & temp
+.DS_Store
+Thumbs.db
+*.zip
+depcheck_out.txt

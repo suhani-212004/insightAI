@@ -13,6 +13,7 @@ os.environ["READONLY_DATABASE_URL"] = os.environ.get(
     "TEST_READONLY_DATABASE_URL", "postgresql+psycopg2://insight_readonly:insight_ro@127.0.0.1:5432/insight_test"
 )
 os.environ["OPENAI_API_KEY"] = ""
+os.environ["GROQ_API_KEY"] = ""  # tests must never hit a real LLM, even if backend/.env has a key
 os.environ["STRIPE_SECRET_KEY"] = ""
 
 import pandas as pd  # noqa: E402

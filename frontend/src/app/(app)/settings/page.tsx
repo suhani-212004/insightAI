@@ -31,15 +31,16 @@ function Settings() {
     try {
       setMembers(await api<Member[]>("/orgs/members"));
       setPlan(await api<PlanInfo>("/billing"));
-      setPlans(await api("/billing/plans"));
+      setPlans(await api<Record<string, PlanInfo["limits"]>>("/billing/plans"));
     } catch (e) { setError((e as Error).message); }
   }, []);
   useEffect(() => { load(); }, [load, org?.id]);
   useEffect(() => { if (params.get("billing") === "success") refresh(); }, [params, refresh]);
 
-  async function act(fn: () => Promise<unknown>) {
+  async function act(fn: () => Promise<unknown>): Promise<boolean> {
     setError(null);
-    try { await fn(); await load(); } catch (e) { setError((e as Error).message); }
+    try { await fn(); await load(); return true; }
+    catch (e) { setError((e as Error).message); return false; }
   }
 
   async function choosePlan(p: string) {
@@ -47,8 +48,7 @@ function Settings() {
       await act(async () => { window.location.href = (await api<{ url: string }>("/billing/checkout", { method: "POST", json: { plan: p } })).url; });
     } else if (plan?.stripe_enabled) {
       await act(async () => { window.location.href = (await api<{ url: string }>("/billing/portal", { method: "POST" })).url; });
-    } else {
-      await act(() => api("/billing/dev/set-plan", { method: "POST", json: { plan: p } }));
+    } else if (await act(() => api("/billing/dev/set-plan", { method: "POST", json: { plan: p } }))) {
       await refresh();
     }
   }
@@ -124,7 +124,7 @@ function Settings() {
           <form className="mt-4 grid gap-2 sm:grid-cols-[1fr_140px_1fr_auto] sm:items-end" onSubmit={(e) => {
             e.preventDefault();
             act(() => api("/orgs/members", { method: "POST", json: { ...invite, password: invite.password || null } }))
-              .then(() => setInvite({ email: "", role: "viewer", password: "" }));
+              .then((ok) => { if (ok) setInvite({ email: "", role: "viewer", password: "" }); });
           }}>
             <Label text="Email"><Input type="email" required value={invite.email} onChange={(e) => setInvite({ ...invite, email: e.target.value })} /></Label>
             <Label text="Role">

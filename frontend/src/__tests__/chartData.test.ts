@@ -23,6 +23,12 @@ describe("chartData helpers", () => {
       .toEqual({ x: "month", y: ["units"] });
   });
 
+  it("uses a numeric x axis for scatter plots", () => {
+    const rows = [{ product: "A", price: 10, qty: 3 }];
+    expect(resolveAxes({ type: "scatter", y: [] }, ["product", "price", "qty"], rows))
+      .toEqual({ x: "price", y: ["qty"] });
+  });
+
   it("builds heatmap cells", () => {
     const h = toHeatmap([{ r: "N", c: "A", v: 1 }, { r: "N", c: "B", v: 5 }, { r: "S", c: "A", v: 3 }], "r", "c", "v");
     expect(h.xs).toEqual(["N", "S"]);

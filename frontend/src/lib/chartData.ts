@@ -20,7 +20,11 @@ export function formatLabel(v: unknown): string {
 /** Pick sensible x / y columns when a spec doesn't name valid ones. */
 export function resolveAxes(spec: ChartSpec, columns: string[], rows: Row[]): { x: string; y: string[] } {
   const numeric = columns.filter((c) => rows.some((r) => typeof r[c] === "number"));
-  const x = spec.x && columns.includes(spec.x) ? spec.x : columns.find((c) => !numeric.includes(c)) ?? columns[0];
+  // Scatter plots two numbers against each other, so X has to be numeric too.
+  const fallbackX = spec.type === "scatter" && numeric.length >= 2
+    ? numeric[0]
+    : columns.find((c) => !numeric.includes(c)) ?? columns[0];
+  const x = spec.x && columns.includes(spec.x) ? spec.x : fallbackX;
   const y = (spec.y || []).filter((c) => columns.includes(c));
   return { x, y: y.length ? y : numeric.filter((c) => c !== x).slice(0, 3) };
 }

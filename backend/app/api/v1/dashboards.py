@@ -2,7 +2,7 @@ from fastapi import APIRouter, Depends, HTTPException, Response, status
 from sqlalchemy.exc import DBAPIError
 from sqlalchemy.orm import Session
 
-from app.api.deps import TenantContext, require_role
+from app.api.deps import Page, TenantContext, get_owned, pagination, require_role
 from app.core.database import get_db
 from app.models import Dashboard, ReportSchedule, Widget
 from app.schemas import (
@@ -23,10 +23,7 @@ router = APIRouter(tags=["dashboards"])
 
 
 def _dash(db: Session, ctx: TenantContext, dashboard_id: int) -> Dashboard:
-    d = db.query(Dashboard).filter_by(id=dashboard_id, org_id=ctx.org.id).first()
-    if not d:
-        raise HTTPException(status.HTTP_404_NOT_FOUND, "Dashboard not found")
-    return d
+    return get_owned(db, Dashboard, dashboard_id, ctx.org.id)
 
 
 def _widget(db: Session, ctx: TenantContext, widget_id: int) -> Widget:
@@ -57,8 +54,9 @@ def run_query(body: dict, ctx: TenantContext = Depends(require_role("admin")), d
 
 # ---------- dashboards ----------
 @router.get("/dashboards", response_model=list[DashboardOut])
-def list_dashboards(ctx: TenantContext = Depends(require_role("viewer")), db: Session = Depends(get_db)):
-    return db.query(Dashboard).filter_by(org_id=ctx.org.id).order_by(Dashboard.id).all()
+def list_dashboards(ctx: TenantContext = Depends(require_role("viewer")), page: Page = Depends(pagination),
+                    db: Session = Depends(get_db)):
+    return page.apply(db.query(Dashboard).filter_by(org_id=ctx.org.id).order_by(Dashboard.id)).all()
 
 
 @router.post("/dashboards", response_model=DashboardOut, status_code=201)
@@ -189,8 +187,5 @@ def create_schedule(dashboard_id: int, body: ScheduleIn, ctx: TenantContext = De
 @router.delete("/schedules/{schedule_id}", status_code=204)
 def delete_schedule(schedule_id: int, ctx: TenantContext = Depends(require_role("admin")),
                     db: Session = Depends(get_db)):
-    s = db.query(ReportSchedule).filter_by(id=schedule_id, org_id=ctx.org.id).first()
-    if not s:
-        raise HTTPException(status.HTTP_404_NOT_FOUND, "Schedule not found")
-    db.delete(s)
+    db.delete(get_owned(db, ReportSchedule, schedule_id, ctx.org.id, "Schedule"))
     db.commit()

@@ -9,6 +9,7 @@ If Redis is down, publishing silently does nothing so uploads still work.
 import asyncio
 import json
 import logging
+import weakref
 from collections.abc import AsyncIterator
 
 import redis
@@ -34,9 +35,25 @@ def publish(org_id: int, event_type: str, **data) -> None:
         log.warning("event publish failed: %s", e)
 
 
+_async_clients: "weakref.WeakKeyDictionary[asyncio.AbstractEventLoop, aioredis.Redis]" = weakref.WeakKeyDictionary()
+
+
+def _async_client() -> aioredis.Redis:
+    """One pooled client per event loop, shared by every open SSE stream in this process.
+
+    Creating a client per stream meant one new TCP connection per browser tab; with a
+    shared pool, idle streams cost nothing extra and connections are reused.
+    """
+    loop = asyncio.get_running_loop()
+    client = _async_clients.get(loop)
+    if client is None:
+        client = aioredis.Redis.from_url(settings.REDIS_URL, max_connections=settings.REDIS_MAX_CONNECTIONS)
+        _async_clients[loop] = client
+    return client
+
+
 async def subscribe(org_id: int) -> AsyncIterator[str]:
-    client = aioredis.Redis.from_url(settings.REDIS_URL)
-    pubsub = client.pubsub()
+    pubsub = _async_client().pubsub()
     await pubsub.subscribe(channel(org_id))
     loop = asyncio.get_running_loop()
     last_sent = loop.time()
@@ -53,5 +70,4 @@ async def subscribe(org_id: int) -> AsyncIterator[str]:
             yield f"data: {data}\n\n"
     finally:
         await pubsub.unsubscribe(channel(org_id))
-        await pubsub.aclose()
-        await client.aclose()
+        await pubsub.aclose()  # hands the connection back to the shared pool

@@ -6,9 +6,17 @@ from app.core.database import get_db
 from app.models import ChatSession
 from app.schemas import AskIn, AskOut, ChatMessageOut, ChatSessionOut
 from app.services import ai_query
-from app.services.plans import consume_ai_query
+from app.services.plans import consume_ai_query, refund_ai_query
 
 router = APIRouter(prefix="/ai", tags=["ai"])
+
+
+def _own_session(db: Session, ctx: TenantContext, session_id: int) -> ChatSession:
+    # Chat history is private to the user, not just the org, so this also filters on user_id.
+    s = db.query(ChatSession).filter_by(id=session_id, org_id=ctx.org.id, user_id=ctx.user.id).first()
+    if not s:
+        raise HTTPException(status.HTTP_404_NOT_FOUND, "Chat session not found")
+    return s
 
 
 @router.post("/ask", response_model=AskOut)
@@ -17,7 +25,13 @@ def ask(body: AskIn, ctx: TenantContext = Depends(require_role("viewer")), db: S
     try:
         msg = ai_query.ask(db, ctx.org.id, ctx.user.id, body.question, body.session_id)
     except LookupError as e:
+        refund_ai_query(db, ctx.org)
         raise HTTPException(status.HTTP_404_NOT_FOUND, str(e))
+    except ai_query.LLMUnavailable:
+        # Don't charge the user's daily quota for our (or OpenAI's) failure.
+        refund_ai_query(db, ctx.org)
+        raise HTTPException(status.HTTP_503_SERVICE_UNAVAILABLE,
+                            "The AI service is not responding right now. Please try again in a minute.")
     return {"session_id": msg.session_id, "message": msg}
 
 
@@ -35,17 +49,13 @@ def sessions(ctx: TenantContext = Depends(require_role("viewer")), db: Session =
 @router.get("/sessions/{session_id}", response_model=list[ChatMessageOut])
 def session_messages(session_id: int, ctx: TenantContext = Depends(require_role("viewer")),
                      db: Session = Depends(get_db)):
-    s = db.query(ChatSession).filter_by(id=session_id, org_id=ctx.org.id, user_id=ctx.user.id).first()
-    if not s:
-        raise HTTPException(status.HTTP_404_NOT_FOUND, "Chat session not found")
+    s = _own_session(db, ctx, session_id)
     return s.messages
 
 
 @router.delete("/sessions/{session_id}", status_code=204)
 def delete_session(session_id: int, ctx: TenantContext = Depends(require_role("viewer")),
                    db: Session = Depends(get_db)):
-    s = db.query(ChatSession).filter_by(id=session_id, org_id=ctx.org.id, user_id=ctx.user.id).first()
-    if not s:
-        raise HTTPException(status.HTTP_404_NOT_FOUND, "Chat session not found")
+    s = _own_session(db, ctx, session_id)
     db.delete(s)
     db.commit()

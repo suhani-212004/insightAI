@@ -22,7 +22,7 @@ export default function DatasetDetail() {
   const load = useCallback(async () => {
     try {
       setDataset(await api<Dataset>(`/datasets/${id}`));
-      setPreview(await api(`/datasets/${id}/preview?limit=100`));
+      setPreview(await api<{ columns: string[]; rows: Row[] }>(`/datasets/${id}/preview?limit=100`));
       setAnomalies(await api<Anomaly[]>(`/datasets/${id}/anomalies`));
     } catch (e) { setError((e as Error).message); }
   }, [id]);

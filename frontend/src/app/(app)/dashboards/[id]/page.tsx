@@ -7,8 +7,8 @@ import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { Responsive, WidthProvider, type Layout } from "react-grid-layout";
 import { WidgetCard } from "@/components/WidgetCard";
 import { WidgetEditor } from "@/components/WidgetEditor";
-import { Button, Empty, ErrorText, PageHeader } from "@/components/ui";
-import { api } from "@/lib/api";
+import { Button, Empty, ErrorText, PageHeader, Spinner } from "@/components/ui";
+import { api, downloadBlob } from "@/lib/api";
 import { useAuth } from "@/lib/auth";
 import type { ChartSpec, Dashboard, Widget } from "@/lib/types";
 
@@ -63,23 +63,22 @@ export default function DashboardPage() {
 
   async function removeWidget(w: Widget) {
     if (!confirm(`Remove "${w.title}"?`)) return;
-    await api(`/widgets/${w.id}`, { method: "DELETE" });
-    load();
+    try {
+      await api(`/widgets/${w.id}`, { method: "DELETE" });
+      load();
+    } catch (e) { setError((e as Error).message); }
   }
 
   async function exportPdf() {
     setExporting(true); setError(null);
     try {
       const blob = await api<Blob>(`/dashboards/${id}/export`, { method: "POST" });
-      const url = URL.createObjectURL(blob);
-      const a = Object.assign(document.createElement("a"), { href: url, download: `${dash?.name ?? "dashboard"}.pdf` });
-      a.click();
-      URL.revokeObjectURL(url);
+      downloadBlob(blob, `${dash?.name ?? "dashboard"}.pdf`);
     } catch (e) { setError((e as Error).message); }
     finally { setExporting(false); }
   }
 
-  if (!dash) return <ErrorText error={error} />;
+  if (!dash) return error ? <ErrorText error={error} /> : <div className="flex justify-center p-10"><Spinner /></div>;
 
   return (
     <>

@@ -44,8 +44,13 @@ def plan_limits(plan: str) -> dict:
     return {**p, "features": sorted(p["features"])}
 
 
+def has_feature(org: Organization, feature: str) -> bool:
+    # Unknown plan names (e.g. a typo from a Stripe webhook) fall back to free instead of crashing.
+    return feature in PLANS.get(org.plan, PLANS["free"])["features"]
+
+
 def require_feature(org: Organization, feature: str) -> None:
-    if feature not in PLANS.get(org.plan, PLANS["free"])["features"]:
+    if not has_feature(org, feature):
         raise HTTPException(
             status.HTTP_402_PAYMENT_REQUIRED,
             f"'{feature}' is not available on the {org.plan} plan. Upgrade to unlock it.",
@@ -99,3 +104,10 @@ def consume_ai_query(db: Session, org: Organization) -> None:
         )
     c.count += 1
     db.commit()
+
+
+def refund_ai_query(db: Session, org: Organization) -> None:
+    c = _counter(db, org.id, "ai_queries")
+    if c and c.count > 0:
+        c.count -= 1
+        db.commit()

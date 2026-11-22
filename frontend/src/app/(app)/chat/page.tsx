@@ -2,10 +2,11 @@
 
 import clsx from "clsx";
 import { Code2, Download, MessageSquarePlus, Pin, Send, Sparkles } from "lucide-react";
+import Link from "next/link";
 import { useCallback, useEffect, useRef, useState } from "react";
 import { ChartRenderer } from "@/components/charts/ChartRenderer";
 import { Button, ErrorText, Modal, Select, Spinner } from "@/components/ui";
-import { api } from "@/lib/api";
+import { api, downloadBlob } from "@/lib/api";
 import { useAuth } from "@/lib/auth";
 import { toCSV } from "@/lib/chartData";
 import type { ChatMessage, ChatSession, Dashboard } from "@/lib/types";
@@ -33,8 +34,12 @@ export default function ChatPage() {
   useEffect(() => { bottom.current?.scrollIntoView({ behavior: "smooth" }); }, [messages, busy]);
 
   async function open(id: number) {
-    setSessionId(id);
-    setMessages(await api<ChatMessage[]>(`/ai/sessions/${id}`));
+    if (busy) return; // don't swap conversations while an answer is still coming back
+    setError(null);
+    try {
+      setMessages(await api<ChatMessage[]>(`/ai/sessions/${id}`));
+      setSessionId(id);
+    } catch (e) { setError((e as Error).message); }
   }
 
   async function ask(q: string) {
@@ -101,9 +106,7 @@ function AnswerCard({ m, onPin }: { m: ChatMessage; onPin: () => void }) {
   const columns = m.rows?.length ? Object.keys(m.rows[0]) : [];
 
   function downloadCsv() {
-    const blob = new Blob([toCSV(columns, m.rows ?? [])], { type: "text/csv" });
-    const a = Object.assign(document.createElement("a"), { href: URL.createObjectURL(blob), download: "result.csv" });
-    a.click();
+    downloadBlob(new Blob([toCSV(columns, m.rows ?? [])], { type: "text/csv" }), "result.csv");
   }
 
   return (
@@ -134,7 +137,9 @@ function PinModal({ message, onClose }: { message: ChatMessage | null; onClose: 
   useEffect(() => {
     if (!message) return;
     setDone(false); setError(null); setTitle(message.content.slice(0, 60));
-    api<Dashboard[]>("/dashboards").then((d) => { setDashboards(d); setTarget(d[0] ? String(d[0].id) : ""); });
+    api<Dashboard[]>("/dashboards")
+      .then((d) => { setDashboards(d); setTarget(d[0] ? String(d[0].id) : ""); })
+      .catch((e) => setError(e.message));
   }, [message]);
 
   async function pin() {
@@ -147,7 +152,7 @@ function PinModal({ message, onClose }: { message: ChatMessage | null; onClose: 
 
   return (
     <Modal open={!!message} onClose={onClose} title="Pin to dashboard">
-      {done ? <p className="text-sm">Pinned. <a className="text-brand-600 hover:underline" href={`/dashboards/${target}`}>Open dashboard →</a></p> : (
+      {done ? <p className="text-sm">Pinned. <Link className="text-brand-600 hover:underline" href={`/dashboards/${target}`}>Open dashboard →</Link></p> : (
         <div className="space-y-3">
           <input className="field" value={title} onChange={(e) => setTitle(e.target.value)} placeholder="Widget title" />
           {dashboards.length === 0 ? <p className="text-sm text-slate-500">Create a dashboard first.</p> : (

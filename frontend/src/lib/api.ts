@@ -44,6 +44,13 @@ export async function api<T = unknown>(path: string, init: RequestInit & { json?
   }
   const res = await fetch(`${API_URL}/api/v1${path}`, { ...init, headers, body });
   if (!res.ok) {
+    // Token expired or revoked: drop it and send the user back to the login page,
+    // otherwise every page just shows "Invalid or expired token" forever.
+    // (Skipped for the print page, which uses its own short-lived token.)
+    if (res.status === 401 && !override && !path.startsWith("/auth/login") && typeof window !== "undefined") {
+      session.setToken(null);
+      if (window.location.pathname !== "/login") window.location.assign("/login");
+    }
     let message = res.statusText;
     try {
       const data = await res.json();
@@ -56,6 +63,17 @@ export async function api<T = unknown>(path: string, init: RequestInit & { json?
   return (type.includes("application/json") ? res.json() : res.blob()) as Promise<T>;
 }
 
+/** Save a Blob as a file. Revoking right after click() can cancel the download in some browsers. */
+export function downloadBlob(blob: Blob, filename: string) {
+  const url = URL.createObjectURL(blob);
+  const a = Object.assign(document.createElement("a"), { href: url, download: filename });
+  document.body.appendChild(a);
+  a.click();
+  a.remove();
+  setTimeout(() => URL.revokeObjectURL(url), 1000);
+}
+
+// EventSource can't send headers, so the stream is the one endpoint that takes ?token=.
 export function streamUrl(): string {
   const p = new URLSearchParams({ token: session.token() || "", org_id: session.orgId() || "" });
   return `${API_URL}/api/v1/stream?${p}`;
