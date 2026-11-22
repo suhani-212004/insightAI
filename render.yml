@@ -1,0 +1,104 @@
+# Render Blueprint for InsightAI
+# Connect this GitHub repository at https://dashboard.render.com/blueprints
+
+databases:
+  - name: insightai-db
+    databaseName: insight
+    user: insight
+    plan: free
+    postgresMajorVersion: 16
+
+services:
+  # 1. Managed Redis
+  - type: redis
+    name: insightai-redis
+    plan: free
+    ipAllowList: []
+
+  # 2. FastAPI Backend
+  - type: web
+    name: insightai-api
+    env: docker
+    dockerfilePath: backend/Dockerfile
+    dockerContext: backend
+    plan: free
+    healthCheckPath: /health
+    envVars:
+      - key: ENV
+        value: prod
+      - key: DATABASE_URL
+        fromDatabase:
+          name: insightai-db
+          property: connectionString
+      - key: REDIS_URL
+        fromService:
+          type: redis
+          name: insightai-redis
+          property: connectionString
+      - key: JWT_SECRET
+        generateValue: true
+      - key: ALLOW_SINGLE_DB_USER
+        value: "true"
+      - key: AUTO_SEED
+        value: "true"
+      - key: CORS_ORIGINS
+        value: "*"
+      - key: GROQ_API_KEY
+        sync: false
+      - key: GROQ_MODEL
+        value: qwen/qwen3.8-27b
+      - key: OPENAI_API_KEY
+        sync: false
+      - key: USE_OLLAMA
+        value: "false"
+
+  # 3. Background Task Worker (ARQ)
+  - type: worker
+    name: insightai-worker
+    env: docker
+    dockerfilePath: backend/Dockerfile
+    dockerContext: backend
+    dockerCommand: arq app.workers.tasks.WorkerSettings
+    plan: free
+    envVars:
+      - key: ENV
+        value: prod
+      - key: DATABASE_URL
+        fromDatabase:
+          name: insightai-db
+          property: connectionString
+      - key: REDIS_URL
+        fromService:
+          type: redis
+          name: insightai-redis
+          property: connectionString
+      - key: JWT_SECRET
+        fromService:
+          type: web
+          name: insightai-api
+          envVarKey: JWT_SECRET
+      - key: ALLOW_SINGLE_DB_USER
+        value: "true"
+      - key: GROQ_API_KEY
+        fromService:
+          type: web
+          name: insightai-api
+          envVarKey: GROQ_API_KEY
+      - key: GROQ_MODEL
+        value: qwen/qwen3.8-27b
+      - key: USE_OLLAMA
+        value: "false"
+
+  # 4. Next.js Frontend Web
+  - type: web
+    name: insightai-web
+    env: docker
+    dockerfilePath: frontend/Dockerfile
+    dockerContext: frontend
+    plan: free
+    envVars:
+      - key: NEXT_PUBLIC_API_URL
+        fromService:
+          type: web
+          name: insightai-api
+          property: host
