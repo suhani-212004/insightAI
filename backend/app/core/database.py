@@ -40,8 +40,8 @@ if settings.READONLY_DATABASE_URL:
 else:
     # Falling back means LLM SQL runs as the app role, which can read the users table.
     # sql_guard still blocks it, but the third safety layer is gone, so say so loudly.
-    if settings.ENV == "prod":
-        raise RuntimeError("READONLY_DATABASE_URL must be set in production")
+    if settings.ENV == "prod" and not settings.ALLOW_SINGLE_DB_USER:
+        raise RuntimeError("READONLY_DATABASE_URL must be set in production (or set ALLOW_SINGLE_DB_USER=true)")
     log.warning("READONLY_DATABASE_URL not set; AI/widget SQL will use the main DB role")
     readonly_engine = engine
 

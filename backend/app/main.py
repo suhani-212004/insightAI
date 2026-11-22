@@ -21,6 +21,16 @@ async def lifespan(_app: FastAPI):
     # Simple for a project: create tables on boot. Swap for Alembic migrations
     # (alembic revision --autogenerate) once the schema settles.
     Base.metadata.create_all(engine)
+    if settings.AUTO_SEED:
+        from app import seed
+        from app.models import Organization
+        try:
+            with SessionLocal() as db:
+                if not db.query(Organization).first():
+                    logging.info("Fresh database detected; running automatic demo seed...")
+                    seed.main()
+        except Exception as e:
+            logging.warning("Auto-seed skipped: %s", e)
     yield
 
 

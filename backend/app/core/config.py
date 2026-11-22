@@ -48,6 +48,8 @@ class Settings(BaseSettings):
 
     # Let API connectors poll localhost / LAN addresses. Only honoured when ENV is dev or test.
     ALLOW_PRIVATE_CONNECTOR_URLS: bool = False
+    ALLOW_SINGLE_DB_USER: bool = True
+    AUTO_SEED: bool = False
 
     MAX_UPLOAD_MB: int = 25
     MAX_WEBHOOK_KB: int = 1024
