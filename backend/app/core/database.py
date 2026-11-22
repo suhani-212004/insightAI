@@ -22,9 +22,17 @@ from app.core.config import settings
 log = logging.getLogger(__name__)
 
 
+def _normalize_db_url(url: str) -> str:
+    if url.startswith("postgres://"):
+        return url.replace("postgres://", "postgresql+psycopg2://", 1)
+    if url.startswith("postgresql://") and not url.startswith("postgresql+"):
+        return url.replace("postgresql://", "postgresql+psycopg2://", 1)
+    return url
+
+
 def _make_engine(url: str, pool_size: int):
     return create_engine(
-        url,
+        _normalize_db_url(url),
         pool_pre_ping=True,
         pool_size=pool_size,
         max_overflow=settings.DB_MAX_OVERFLOW,
